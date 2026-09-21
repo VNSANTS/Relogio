@@ -282,6 +282,12 @@
       <option value="es-ES">Espanhol</option>
     </select>
   </div>
+
+  <div class="group">
+    <label>Instalação</label>
+    <button id="installBtn" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--panel-border);background:var(--accent);color:#0a0a0a;font-weight:600;cursor:pointer;font-size:14px;">Instalar app</button>
+    <div id="installMsg" style="font-size:12px;opacity:0.6;margin-top:8px;font-family:'Segoe UI', system-ui, sans-serif;"></div>
+  </div>
 </div>
 
 <script>
@@ -426,6 +432,49 @@
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
+
+  // Instalação
+  const installBtn = $('installBtn'), installMsg = $('installMsg');
+  let deferredPrompt = null;
+
+  function setInstallState(){
+    if(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone){
+      installBtn.style.display = 'none';
+      installMsg.textContent = 'Já instalado ✓';
+      return;
+    }
+    if(deferredPrompt){
+      installBtn.style.display = '';
+      installMsg.textContent = '';
+    } else {
+      installBtn.style.display = '';
+      installMsg.textContent = 'Se o botão não abrir o instalador, use o ícone ⛶/+ na barra de endereço do navegador.';
+    }
+  }
+
+  window.addEventListener('beforeinstallprompt', (e)=>{
+    e.preventDefault();
+    deferredPrompt = e;
+    setInstallState();
+  });
+
+  window.addEventListener('appinstalled', ()=>{
+    deferredPrompt = null;
+    setInstallState();
+  });
+
+  installBtn.onclick = async ()=>{
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      const {outcome} = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      setInstallState();
+    } else {
+      installMsg.textContent = 'Procure o ícone de instalar (⛶ ou +) na barra de endereço do navegador.';
+    }
+  };
+
+  setInstallState();
 })();
 </script>
 </body>
