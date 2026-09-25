@@ -49,7 +49,7 @@
     cursor:pointer;
   }
   #time{
-    font-size:min(20vw,18vh);
+    font-size:calc(min(20vw,18vh) * var(--clock-scale, 1));
     font-weight:700;
     letter-spacing:2px;
     line-height:1;
@@ -154,6 +154,12 @@
     font-size:14px;
   }
   #panel input[type=color]{ padding:2px; height:38px; cursor:pointer; }
+  #panel input[type=range]{
+    width:100%;
+    accent-color:var(--accent);
+    cursor:pointer;
+  }
+  .range-value{ font-size:12px; opacity:0.6; float:right; }
   .swatches{ display:flex; gap:8px; flex-wrap:wrap; }
   .swatch{
     width:28px;height:28px;border-radius:50%;
@@ -196,6 +202,34 @@
     color:var(--fg);
   }
   body:hover #hint{ opacity:0.4; }
+
+  #extraClocks{ margin-top:0.8vh; font-size:min(2.4vw,2.4vh); opacity:0.65; display:flex; gap:18px; justify-content:center; flex-wrap:wrap; }
+  #analogClock{ display:none; margin:0 auto; }
+  #analogClock line{ stroke:var(--fg); }
+  #analogClock .tick{ stroke:var(--fg); opacity:0.35; }
+  #analogClock .sec{ stroke:var(--accent); }
+
+  #toolWidget{
+    position:fixed; bottom:20px; left:20px;
+    background:var(--panel-bg); color:var(--panel-fg);
+    border:1px solid var(--panel-border); border-radius:14px;
+    padding:16px; width:230px; z-index:40;
+    font-family:'Segoe UI', system-ui, sans-serif;
+    display:none; backdrop-filter:blur(10px);
+  }
+  #toolWidget.open{ display:block; }
+  .tool-tabs{ display:flex; gap:4px; margin-bottom:12px; }
+  .tool-tab{ flex:1; padding:6px 4px; font-size:11px; border:none; border-radius:6px; background:rgba(255,255,255,0.06); color:var(--panel-fg); cursor:pointer; opacity:0.6; }
+  .tool-tab.active{ opacity:1; background:var(--accent); color:#0a0a0a; }
+  .tool-pane input[type=time], .tool-pane input[type=number]{ width:100%; padding:6px; border-radius:6px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.06); color:var(--panel-fg); margin-bottom:8px; }
+  .tool-pane button{ padding:6px 10px; border-radius:6px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.08); color:var(--panel-fg); cursor:pointer; font-size:12px; margin-right:6px; }
+  .tool-big-display{ font-size:22px; font-variant-numeric:tabular-nums; text-align:center; margin:6px 0 10px; }
+  #toolClose{ position:absolute; top:8px; right:10px; background:none; border:none; color:var(--panel-fg); opacity:0.5; cursor:pointer; font-size:14px; }
+  #toolToggleBtns{ display:flex; gap:8px; margin-top:6px; }
+  #toolToggleBtns button{ flex:1; padding:8px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.08); color:var(--panel-fg); cursor:pointer; font-size:12px; }
+  .shortcuts-list{ font-size:12px; opacity:0.7; line-height:1.8; }
+  #backupBtns{ display:flex; gap:8px; }
+  #backupBtns button{ flex:1; padding:9px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.08); color:var(--panel-fg); cursor:pointer; font-size:13px; }
 </style>
 </head>
 <body>
@@ -207,14 +241,53 @@
 
 <div id="clockWrap">
   <div id="time">00:00</div>
+  <svg id="analogClock" viewBox="0 0 200 200" width="min(55vw,50vh)" height="min(55vw,50vh)">
+    <circle cx="100" cy="100" r="94" fill="none" stroke="var(--fg)" stroke-width="3" opacity="0.3"/>
+    <g id="ticks"></g>
+    <line id="hourHand" x1="100" y1="100" x2="100" y2="58" stroke-width="6" stroke-linecap="round"/>
+    <line id="minHand" x1="100" y1="100" x2="100" y2="38" stroke-width="4" stroke-linecap="round"/>
+    <line id="secHand" class="sec" x1="100" y1="100" x2="100" y2="28" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="100" cy="100" r="4" fill="var(--accent)"/>
+  </svg>
   <div id="date">segunda-feira, 1 de janeiro</div>
+  <div id="extraClocks"></div>
 </div>
 
 <div id="hint">clique no relógio ou pressione F para tela cheia · ⚙ para personalizar</div>
 
+<div id="toolWidget">
+  <button id="toolClose">✕</button>
+  <div class="tool-tabs">
+    <button class="tool-tab active" data-tab="alarm">Despertador</button>
+    <button class="tool-tab" data-tab="timer">Timer</button>
+    <button class="tool-tab" data-tab="stopwatch">Cronômetro</button>
+  </div>
+  <div id="paneAlarm" class="tool-pane">
+    <input type="time" id="alarmTime">
+    <button id="alarmToggle">Ativar</button>
+    <div id="alarmStatus" style="font-size:12px;opacity:0.6;margin-top:6px;"></div>
+  </div>
+  <div id="paneTimer" class="tool-pane" style="display:none">
+    <input type="number" id="timerMinutes" min="1" max="180" value="5">
+    <div class="tool-big-display" id="timerDisplay">05:00</div>
+    <button id="timerStart">Iniciar</button>
+    <button id="timerReset">Zerar</button>
+  </div>
+  <div id="paneStopwatch" class="tool-pane" style="display:none">
+    <div class="tool-big-display" id="swDisplay">00:00.0</div>
+    <button id="swStart">Iniciar</button>
+    <button id="swReset">Zerar</button>
+  </div>
+</div>
+
 <div id="panel">
   <button id="closePanel">✕</button>
   <h2>Personalizar</h2>
+
+  <div class="group">
+    <label>Tamanho dos números <span class="range-value" id="scaleValue">100%</span></label>
+    <input type="range" id="scaleRange" min="40" max="200" step="5" value="100">
+  </div>
 
   <div class="group">
     <label>Formato</label>
@@ -284,6 +357,60 @@
   </div>
 
   <div class="group">
+    <label>Mostrador</label>
+    <select id="modeSelect">
+      <option value="digital">Digital</option>
+      <option value="analog">Analógico</option>
+    </select>
+  </div>
+
+  <div class="group">
+    <label>Fusos horários extras</label>
+    <select id="tz1" style="margin-bottom:8px;"></select>
+    <select id="tz2"></select>
+  </div>
+
+  <div class="group">
+    <div class="row">
+      <span>Papel de parede dinâmico</span>
+      <div class="switch" id="toggleWallpaper"></div>
+    </div>
+  </div>
+
+  <div class="group">
+    <label>Ferramentas</label>
+    <div id="toolToggleBtns">
+      <button id="openAlarm">⏰ Despertador</button>
+      <button id="openTimer">⏱ Timer</button>
+      <button id="openStopwatch">⏲ Cronômetro</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <label>Backup</label>
+    <div id="backupBtns">
+      <button id="exportBtn">Exportar</button>
+      <button id="importBtn">Importar</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json" style="display:none;">
+  </div>
+
+  <div class="group">
+    <label>Atalhos de teclado</label>
+    <div class="shortcuts-list">
+      F tela cheia · P flutuante<br>
+      ⚙ ou clique fora fecha painel<br>
+      Esc fecha painel/tela cheia
+    </div>
+  </div>
+
+  <div class="group">
+    <label>Modo flutuante <span class="range-value">(PiP)</span></label>
+    <button id="pipBtn" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--panel-border);background:rgba(255,255,255,0.08);color:var(--panel-fg);font-weight:600;cursor:pointer;font-size:14px;">Ativar janela flutuante</button>
+    <div id="pipMsg" style="font-size:12px;opacity:0.6;margin-top:8px;font-family:'Segoe UI', system-ui, sans-serif;">Fica por cima de outros apps/janelas, inclusive fora do navegador. Tecla P alterna.</div>
+  </div>
+
+  <div class="group">
     <label>Instalação</label>
     <button id="installBtn" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--panel-border);background:var(--accent);color:#0a0a0a;font-weight:600;cursor:pointer;font-size:14px;">Instalar app</button>
     <div id="installMsg" style="font-size:12px;opacity:0.6;margin-top:8px;font-family:'Segoe UI', system-ui, sans-serif;"></div>
@@ -301,7 +428,8 @@
   const defaults = {
     fmt24:'24', showSeconds:true, showDate:true, accentSeconds:true,
     accent:'#7dd3fc', theme:'dark', bg:'#0a0a0a', fg:'#f5f5f5',
-    font:"'Segoe UI', system-ui, sans-serif", locale:'pt-BR', useCustomColors:false
+    font:"'Segoe UI', system-ui, sans-serif", locale:'pt-BR', useCustomColors:false,
+    scale:100, mode:'digital', tz1:'', tz2:'', dynamicWallpaper:false
   };
 
   let state = {...defaults};
@@ -332,6 +460,7 @@
     const root = document.documentElement;
     root.style.setProperty('--accent', state.accent);
     root.style.setProperty('--font-clock', state.font);
+    root.style.setProperty('--clock-scale', state.scale / 100);
 
     if(state.theme==='system'){
       root.removeAttribute('data-theme');
@@ -353,9 +482,17 @@
     $('localeSelect').value = state.locale;
     $('bgColor').value = state.bg;
     $('fgColor').value = state.fg;
+    $('scaleRange').value = state.scale;
+    $('scaleValue').textContent = state.scale + '%';
     $('toggleSeconds').classList.toggle('on', state.showSeconds);
     $('toggleDate').classList.toggle('on', state.showDate);
     $('toggleAccentSeconds').classList.toggle('on', state.accentSeconds);
+    $('modeSelect').value = state.mode;
+    $('tz1').value = state.tz1;
+    $('tz2').value = state.tz2;
+    $('toggleWallpaper').classList.toggle('on', state.dynamicWallpaper);
+    document.getElementById('time').style.display = state.mode==='analog' ? 'none' : '';
+    document.getElementById('analogClock').style.display = state.mode==='analog' ? 'block' : 'none';
     buildSwatches();
   }
 
@@ -416,7 +553,18 @@
   });
 
   // Controls
+  $('scaleRange').oninput = e=>{
+    state.scale = parseInt(e.target.value, 10);
+    $('scaleValue').textContent = state.scale + '%';
+    document.documentElement.style.setProperty('--clock-scale', state.scale / 100);
+  };
+  $('scaleRange').onchange = ()=> save();
+
   $('fmt24').onchange = e=>{ state.fmt24=e.target.value; save(); };
+  $('modeSelect').onchange = e=>{ state.mode=e.target.value; applyState(); save(); };
+  $('tz1').onchange = e=>{ state.tz1=e.target.value; save(); };
+  $('tz2').onchange = e=>{ state.tz2=e.target.value; save(); };
+  $('toggleWallpaper').onclick = ()=>{ state.dynamicWallpaper=!state.dynamicWallpaper; applyState(); save(); };
   $('themeSelect').onchange = e=>{ state.theme=e.target.value; applyState(); save(); };
   $('fontSelect').onchange = e=>{ state.font=e.target.value; applyState(); save(); };
   $('localeSelect').onchange = e=>{ state.locale=e.target.value; save(); };
@@ -475,6 +623,249 @@
   };
 
   setInstallState();
+
+  // Modo flutuante (Picture-in-Picture) — funciona em Chrome/Edge desktop e Android
+  const pipBtn = $('pipBtn'), pipMsg = $('pipMsg');
+  const pipCanvas = document.createElement('canvas');
+  pipCanvas.width = 480; pipCanvas.height = 220;
+  const pipCtx = pipCanvas.getContext('2d');
+  const pipVideo = document.createElement('video');
+  pipVideo.muted = true; pipVideo.playsInline = true; pipVideo.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;';
+  document.body.appendChild(pipVideo);
+  let pipInterval = null;
+
+  function pipColor(varName, fallback){
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback;
+  }
+
+  function drawPipFrame(){
+    const now = new Date();
+    let h = now.getHours(), ampm = '';
+    if(state.fmt24==='12'){ ampm = h>=12 ? ' PM':' AM'; h = h%12; if(h===0) h=12; }
+    let text = `${state.fmt24==='12'?h:pad(h)}:${pad(now.getMinutes())}`;
+    if(state.showSeconds) text += `:${pad(now.getSeconds())}`;
+    text += ampm;
+    const bg = pipColor('--bg', '#0a0a0a'), fg = pipColor('--fg', '#f5f5f5');
+    pipCtx.fillStyle = bg;
+    pipCtx.fillRect(0, 0, pipCanvas.width, pipCanvas.height);
+    pipCtx.fillStyle = fg;
+    pipCtx.textAlign = 'center'; pipCtx.textBaseline = 'middle';
+    pipCtx.font = `700 64px "Segoe UI", system-ui, sans-serif`;
+    pipCtx.fillText(text, pipCanvas.width/2, pipCanvas.height/2);
+  }
+
+  async function togglePip(){
+    if(document.pictureInPictureElement){
+      await document.exitPictureInPicture();
+      return;
+    }
+    if(!document.pictureInPictureEnabled){
+      pipMsg.textContent = 'Modo flutuante não é suportado neste navegador. Funciona no Chrome ou Edge.';
+      return;
+    }
+    drawPipFrame();
+    pipVideo.srcObject = pipCanvas.captureStream(2);
+    try{
+      await pipVideo.play();
+      await pipVideo.requestPictureInPicture();
+      pipInterval = setInterval(drawPipFrame, 1000);
+      pipMsg.textContent = 'Janela flutuante ativa.';
+    }catch(err){
+      pipMsg.textContent = 'Não foi possível abrir: ' + err.message;
+    }
+  }
+
+  pipVideo.addEventListener('leavepictureinpicture', ()=>{
+    if(pipInterval) clearInterval(pipInterval);
+    pipMsg.textContent = 'Fica por cima de outros apps/janelas, inclusive fora do navegador. Tecla P alterna.';
+  });
+
+  pipBtn.onclick = togglePip;
+
+  // ---------- Fusos horários extras ----------
+  const tzList = [
+    ['', 'Nenhum'], ['America/Sao_Paulo','São Paulo'], ['America/New_York','Nova York'],
+    ['Europe/Lisbon','Lisboa'], ['Europe/London','Londres'], ['Asia/Tokyo','Tóquio'],
+    ['Australia/Sydney','Sydney'], ['America/Los_Angeles','Los Angeles']
+  ];
+  [$('tz1'), $('tz2')].forEach(sel=>{
+    tzList.forEach(([v,label])=>{
+      const o = document.createElement('option'); o.value=v; o.textContent=label; sel.appendChild(o);
+    });
+  });
+
+  function updateExtraClocks(){
+    const box = $('extraClocks'); box.innerHTML='';
+    [state.tz1, state.tz2].forEach(tz=>{
+      if(!tz) return;
+      const label = tzList.find(t=>t[0]===tz)?.[1] || tz;
+      const t = new Date().toLocaleTimeString('pt-BR', {timeZone:tz, hour:'2-digit', minute:'2-digit'});
+      const el = document.createElement('span');
+      el.textContent = `${label}: ${t}`;
+      box.appendChild(el);
+    });
+  }
+
+  // ---------- Relógio analógico ----------
+  const ticksG = $('ticks');
+  for(let i=0;i<12;i++){
+    const ang = i*30*Math.PI/180;
+    const x1 = 100+80*Math.sin(ang), y1 = 100-80*Math.cos(ang);
+    const x2 = 100+90*Math.sin(ang), y2 = 100-90*Math.cos(ang);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+    line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+    line.setAttribute('class','tick'); line.setAttribute('stroke-width', i%3===0?3:1.5);
+    ticksG.appendChild(line);
+  }
+  function updateAnalog(){
+    if(state.mode!=='analog') return;
+    const now = new Date();
+    const h = now.getHours()%12, m = now.getMinutes(), s = now.getSeconds();
+    const hDeg = h*30 + m*0.5, mDeg = m*6, sDeg = s*6;
+    $('hourHand').setAttribute('transform', `rotate(${hDeg} 100 100)`);
+    $('minHand').setAttribute('transform', `rotate(${mDeg} 100 100)`);
+    $('secHand').setAttribute('transform', `rotate(${sDeg} 100 100)`);
+  }
+
+  // ---------- Papel de parede dinâmico ----------
+  function updateWallpaper(){
+    if(!state.dynamicWallpaper) return;
+    const hr = new Date().getHours();
+    let bg,fg;
+    if(hr>=6 && hr<11){ bg='#cfe8ff'; fg='#0a2540'; }
+    else if(hr>=11 && hr<17){ bg='#eaf4ff'; fg='#0a2540'; }
+    else if(hr>=17 && hr<20){ bg='#3a1f3d'; fg='#ffd9a0'; }
+    else { bg='#05050a'; fg='#e8e8f0'; }
+    document.documentElement.style.setProperty('--bg', bg);
+    document.documentElement.style.setProperty('--fg', fg);
+  }
+
+  // extend the main tick loop
+  setInterval(()=>{ updateExtraClocks(); updateAnalog(); updateWallpaper(); }, 1000);
+  updateExtraClocks(); updateAnalog(); updateWallpaper();
+
+  // ---------- Widget de ferramentas (despertador / timer / cronômetro) ----------
+  const toolWidget = $('toolWidget');
+  function openTool(tab){
+    toolWidget.classList.add('open');
+    document.querySelectorAll('.tool-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+    document.querySelectorAll('.tool-pane').forEach(p=>p.style.display='none');
+    $('pane'+tab.charAt(0).toUpperCase()+tab.slice(1)).style.display='block';
+  }
+  $('openAlarm').onclick = ()=>openTool('alarm');
+  $('openTimer').onclick = ()=>openTool('timer');
+  $('openStopwatch').onclick = ()=>openTool('stopwatch');
+  $('toolClose').onclick = ()=> toolWidget.classList.remove('open');
+  document.querySelectorAll('.tool-tab').forEach(b=> b.onclick = ()=>openTool(b.dataset.tab));
+
+  function beep(){
+    try{
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880; g.gain.value = 0.15;
+      o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, 500);
+    }catch(e){}
+  }
+
+  // Despertador
+  let alarmActive = false, alarmFiredMinute = null;
+  $('alarmToggle').onclick = ()=>{
+    alarmActive = !alarmActive;
+    $('alarmToggle').textContent = alarmActive ? 'Desativar' : 'Ativar';
+    $('alarmStatus').textContent = alarmActive ? `Tocará às ${$('alarmTime').value || '--:--'}` : '';
+  };
+  setInterval(()=>{
+    if(!alarmActive) return;
+    const now = new Date();
+    const hm = pad(now.getHours())+':'+pad(now.getMinutes());
+    if(hm === $('alarmTime').value && alarmFiredMinute !== hm){
+      alarmFiredMinute = hm;
+      beep();
+      $('alarmStatus').textContent = '⏰ Alarme! ' + hm;
+      openTool('alarm');
+      document.body.style.animation = 'none';
+    }
+  }, 1000);
+
+  // Timer (contagem regressiva)
+  let timerSeconds = 5*60, timerRunning = false, timerHandle = null;
+  function renderTimer(){
+    const m = Math.floor(timerSeconds/60), s = timerSeconds%60;
+    $('timerDisplay').textContent = pad(m)+':'+pad(s);
+  }
+  $('timerMinutes').oninput = e=>{ if(!timerRunning){ timerSeconds = (parseInt(e.target.value,10)||1)*60; renderTimer(); } };
+  $('timerStart').onclick = ()=>{
+    if(timerRunning){
+      clearInterval(timerHandle); timerRunning=false; $('timerStart').textContent='Iniciar';
+    } else {
+      timerRunning=true; $('timerStart').textContent='Pausar';
+      timerHandle = setInterval(()=>{
+        timerSeconds--;
+        if(timerSeconds<=0){ clearInterval(timerHandle); timerRunning=false; $('timerStart').textContent='Iniciar'; beep(); timerSeconds=0; }
+        renderTimer();
+      },1000);
+    }
+  };
+  $('timerReset').onclick = ()=>{
+    clearInterval(timerHandle); timerRunning=false; $('timerStart').textContent='Iniciar';
+    timerSeconds = (parseInt($('timerMinutes').value,10)||5)*60; renderTimer();
+  };
+  renderTimer();
+
+  // Cronômetro
+  let swMs = 0, swRunning = false, swHandle = null, swLast = 0;
+  function renderSw(){
+    const totalMs = swMs;
+    const m = Math.floor(totalMs/60000), s = Math.floor((totalMs%60000)/1000), d = Math.floor((totalMs%1000)/100);
+    $('swDisplay').textContent = pad(m)+':'+pad(s)+'.'+d;
+  }
+  $('swStart').onclick = ()=>{
+    if(swRunning){
+      clearInterval(swHandle); swRunning=false; $('swStart').textContent='Iniciar';
+    } else {
+      swRunning=true; $('swStart').textContent='Pausar'; swLast = Date.now();
+      swHandle = setInterval(()=>{
+        const now=Date.now(); swMs += now-swLast; swLast=now; renderSw();
+      },100);
+    }
+  };
+  $('swReset').onclick = ()=>{ clearInterval(swHandle); swRunning=false; swMs=0; $('swStart').textContent='Iniciar'; renderSw(); };
+  renderSw();
+
+  // ---------- Backup: exportar / importar configurações ----------
+  $('exportBtn').onclick = ()=>{
+    const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='relogio-config.json'; a.click();
+    URL.revokeObjectURL(url);
+  };
+  $('importBtn').onclick = ()=> $('importFile').click();
+  $('importFile').onchange = e=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const imported = JSON.parse(reader.result);
+        state = {...defaults, ...imported};
+        applyState(); save();
+      }catch(err){ alert('Arquivo inválido.'); }
+    };
+    reader.readAsText(file);
+  };
+
+  // ---------- Atalhos de teclado extras ----------
+  document.addEventListener('keydown', e=>{
+    if(panel.contains(document.activeElement) && document.activeElement.tagName!=='BODY') return;
+    if(e.key==='ArrowUp'){ state.scale=Math.min(200,state.scale+5); applyState(); save(); }
+    if(e.key==='ArrowDown'){ state.scale=Math.max(40,state.scale-5); applyState(); save(); }
+    if(e.key.toLowerCase()==='a'){ state.mode = state.mode==='analog'?'digital':'analog'; applyState(); save(); }
+  });
+
+  document.addEventListener('keydown', e=>{
+    if(e.key.toLowerCase()==='p' && !panel.contains(document.activeElement)) togglePip();
+  });
 })();
 </script>
 </body>
