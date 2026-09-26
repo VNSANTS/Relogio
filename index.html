@@ -33,6 +33,7 @@
   }
   body{
     background:var(--bg);
+    background-image:radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%);
     color:var(--fg);
     display:flex;
     align-items:center;
@@ -42,12 +43,37 @@
     font-family:var(--font-clock);
     -webkit-user-select:none;
     user-select:none;
+    padding-top:calc(64px + env(safe-area-inset-top,0px));
+    padding-bottom:calc(96px + env(safe-area-inset-bottom,0px));
   }
 
   #clockWrap{
     text-align:center;
     cursor:pointer;
+    position:relative;
   }
+  #progressRing{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:min(75vw,66vh); height:min(75vw,66vh);
+    pointer-events:none; z-index:0;
+  }
+  #ringProgress{ filter:drop-shadow(0 0 6px var(--accent)) drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 60%, transparent)); }
+  #progressRing + #time{ position:relative; z-index:1; }
+  #bottomNav{
+    position:fixed; bottom:0; left:0; right:0;
+    display:flex; justify-content:space-around;
+    background:var(--panel-bg); border-top:1px solid var(--panel-border);
+    padding:8px 4px calc(8px + env(safe-area-inset-bottom,0px));
+    z-index:15; backdrop-filter:blur(10px);
+  }
+  .nav-item{
+    background:none; border:none; color:var(--panel-fg); opacity:0.5;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    font-size:10px; cursor:pointer; padding:6px 12px; border-radius:10px;
+    font-family:'Segoe UI', system-ui, sans-serif;
+  }
+  .nav-item.active{ opacity:1; color:var(--accent); }
+  .nav-icon{ font-size:18px; }
   #time{
     font-size:calc(min(20vw,18vh) * var(--clock-scale, 1));
     font-weight:700;
@@ -71,44 +97,66 @@
     vertical-align:baseline;
   }
 
-  /* Toggle button to open settings */
-  #gearBtn{
-    position:fixed;
-    top:calc(env(safe-area-inset-top,0px) + 16px);
-    right:16px;
-    width:44px;height:44px;
-    border-radius:50%;
-    border:1px solid var(--panel-border);
-    background:var(--panel-bg);
-    color:var(--panel-fg);
-    display:flex;align-items:center;justify-content:center;
-    cursor:pointer;
-    opacity:0;
-    transition:opacity .25s ease, transform .2s ease;
-    z-index:20;
-    font-size:20px;
+  /* Cabeçalho */
+  #topBar{
+    position:fixed; top:0; left:0; right:0; z-index:25;
+    display:flex; align-items:center; gap:16px;
+    padding:12px 20px; padding-top:calc(12px + env(safe-area-inset-top,0px));
+    background:var(--panel-bg); border-bottom:1px solid var(--panel-border);
+    backdrop-filter:blur(10px); font-family:'Segoe UI', system-ui, sans-serif;
   }
-  body:hover #gearBtn, #gearBtn:focus, #gearBtn.show{ opacity:0.85; }
-  #gearBtn:hover{ transform:rotate(25deg); opacity:1; }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:14px; letter-spacing:3px; color:var(--fg); white-space:nowrap; flex:1; }
+  .logo-img{
+    width:30px;height:30px;border-radius:9px; object-fit:cover;
+    box-shadow:0 0 14px color-mix(in srgb, var(--accent) 70%, transparent);
+  }
+  .top-icons{ display:flex; gap:8px; }
+  .top-icons button{
+    width:38px;height:38px;border-radius:50%;
+    border:1px solid var(--panel-border); background:rgba(255,255,255,0.05);
+    color:var(--panel-fg); cursor:pointer; font-size:16px;
+    display:flex;align-items:center;justify-content:center; flex-shrink:0;
+    transition:background .2s ease, transform .2s ease;
+  }
+  .top-icons button:hover{ background:color-mix(in srgb, var(--accent) 25%, transparent); }
+  #gearBtn:hover{ transform:rotate(25deg); }
 
-  #fsBtn{
-    position:fixed;
-    top:calc(env(safe-area-inset-top,0px) + 16px);
-    right:70px;
-    width:44px;height:44px;
-    border-radius:50%;
-    border:1px solid var(--panel-border);
-    background:var(--panel-bg);
-    color:var(--panel-fg);
-    display:flex;align-items:center;justify-content:center;
-    cursor:pointer;
-    opacity:0;
-    transition:opacity .25s ease;
-    z-index:20;
-    font-size:18px;
+  /* Painel de cards (dashboard) */
+  #dashGrid{
+    position:fixed; top:calc(64px + env(safe-area-inset-top,0px)); bottom:60px; left:0; right:0;
+    display:flex; justify-content:space-between; padding:16px; gap:16px;
+    pointer-events:none; z-index:2; overflow:hidden;
   }
-  body:hover #fsBtn, #fsBtn.show{ opacity:0.85; }
-  #fsBtn:hover{ opacity:1; }
+  #dashLeft, #dashRight{ display:flex; flex-direction:column; gap:10px; width:clamp(150px, 22vw, 220px); overflow-y:auto; pointer-events:auto; }
+  #dashLeft{ align-items:flex-start; } #dashRight{ align-items:flex-end; margin-left:auto; }
+  .dash-card{
+    background:linear-gradient(160deg, rgba(30,34,44,0.72), rgba(20,23,30,0.6));
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:16px;
+    padding:clamp(8px,1.5vw,14px); width:100%; font-family:'Segoe UI', system-ui, sans-serif;
+    box-shadow:0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .dc-title{ font-size:clamp(10px,1.1vw,12px); opacity:0.6; margin-bottom:6px; color:var(--panel-fg); }
+  .dc-big{ font-size:clamp(16px,2.4vw,26px); font-weight:700; color:var(--panel-fg); }
+  .dc-sub{ font-size:clamp(9px,1vw,11px); opacity:0.55; color:var(--panel-fg); margin-top:4px; }
+  .dc-bar{ height:6px; border-radius:4px; background:rgba(255,255,255,0.1); margin-top:8px; overflow:hidden; }
+  .dc-bar-fill{ height:100%; background:var(--accent); width:0%; }
+  .dc-btn{ flex:1; padding:6px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.08); color:var(--panel-fg); cursor:pointer; font-size:13px; }
+  #musicCover{
+    width:42px; height:42px; border-radius:10px; flex-shrink:0;
+    background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 40%, #1a1a2e));
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+    box-shadow:0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
+  }
+  @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  #dashFooter{
+    position:fixed; bottom:56px; left:0; right:0; text-align:center;
+    font-size:10px; letter-spacing:3px; opacity:0.35; z-index:2;
+    font-family:'Segoe UI', system-ui, sans-serif; pointer-events:none;
+  }
+  @media (max-width: 480px){
+    #dashLeft, #dashRight{ display:none; }
+  }
 
   /* Settings panel */
   #panel{
@@ -210,10 +258,10 @@
   #analogClock .sec{ stroke:var(--accent); }
 
   #toolWidget{
-    position:fixed; bottom:20px; left:20px;
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
     background:var(--panel-bg); color:var(--panel-fg);
-    border:1px solid var(--panel-border); border-radius:14px;
-    padding:16px; width:230px; z-index:40;
+    border:1px solid var(--panel-border); border-radius:20px;
+    padding:28px; width:300px; max-width:88vw; z-index:40;
     font-family:'Segoe UI', system-ui, sans-serif;
     display:none; backdrop-filter:blur(10px);
   }
@@ -223,7 +271,7 @@
   .tool-tab.active{ opacity:1; background:var(--accent); color:#0a0a0a; }
   .tool-pane input[type=time], .tool-pane input[type=number]{ width:100%; padding:6px; border-radius:6px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.06); color:var(--panel-fg); margin-bottom:8px; }
   .tool-pane button{ padding:6px 10px; border-radius:6px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.08); color:var(--panel-fg); cursor:pointer; font-size:12px; margin-right:6px; }
-  .tool-big-display{ font-size:22px; font-variant-numeric:tabular-nums; text-align:center; margin:6px 0 10px; }
+  .tool-big-display{ font-size:42px; font-weight:700; font-variant-numeric:tabular-nums; text-align:center; margin:12px 0 16px; }
   #toolClose{ position:absolute; top:8px; right:10px; background:none; border:none; color:var(--panel-fg); opacity:0.5; cursor:pointer; font-size:14px; }
   #toolToggleBtns{ display:flex; gap:8px; margin-top:6px; }
   #toolToggleBtns button{ flex:1; padding:8px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.08); color:var(--panel-fg); cursor:pointer; font-size:12px; }
@@ -243,15 +291,7 @@
   body.edit-mode #layersContainer{ pointer-events:auto; }
   .layer-img{ position:absolute; cursor:grab; touch-action:none; border-radius:4px; user-select:none; }
   body.edit-mode .layer-img{ outline:2px dashed var(--accent); outline-offset:2px; }
-  #editModeBtn{
-    position:fixed; top:calc(env(safe-area-inset-top,0px) + 16px); left:16px;
-    width:44px;height:44px;border-radius:50%;
-    border:1px solid var(--panel-border); background:var(--panel-bg); color:var(--panel-fg);
-    display:flex;align-items:center;justify-content:center; cursor:pointer;
-    opacity:0; transition:opacity .25s ease; z-index:20; font-size:18px;
-  }
-  body:hover #editModeBtn, #editModeBtn.show{ opacity:0.85; }
-  #editModeBtn.active{ opacity:1; background:var(--accent); color:#0a0a0a; }
+  #editModeBtn.active{ background:var(--accent); color:#0a0a0a; }
   #layerToolbar{
     position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
     background:var(--panel-bg); border:1px solid var(--panel-border); border-radius:12px;
@@ -288,7 +328,14 @@ body.has-bg-image{ background-size:cover; background-position:center; background
 <div id="layersContainer"></div>
 <div id="overlay"></div>
 
-<button id="editModeBtn" title="Editar imagens na tela">🖼</button>
+<header id="topBar">
+  <div class="brand"><img class="logo-img" src="icon-192.png" alt="Relógio"><span class="brand-name">RELÓGIO</span></div>
+  <div class="top-icons">
+    <button id="alarmIconBtn" title="Despertador" style="display:none;">⏰</button>
+    <button id="gearBtn" title="Personalizar" style="display:none;">⚙</button>
+    <button id="fsBtn" title="Tela cheia (F)">⛶</button>
+  </div>
+</header>
 
 <div id="layerToolbar">
   <div class="lt-group">Tamanho<input type="range" id="layerScale" min="40" max="900" value="200"></div>
@@ -311,10 +358,87 @@ body.has-bg-image{ background-size:cover; background-position:center; background
   </div>
 </div>
 
-<button id="fsBtn" title="Tela cheia (F)">⛶</button>
-<button id="gearBtn" title="Personalizar">⚙</button>
+<div id="dashGrid">
+  <div id="dashLeft">
+    <div class="dash-card" id="cardBattery">
+      <div class="dc-title">🔋 Bateria</div>
+      <div class="dc-big" id="batteryPct">--</div>
+      <div class="dc-bar"><div class="dc-bar-fill" id="batteryBar"></div></div>
+      <div class="dc-sub" id="batterySub">Não disponível neste navegador</div>
+    </div>
+    <div class="dash-card" id="cardDate">
+      <div class="dc-title">📅 <span id="cardDateWeekday">Sábado</span></div>
+      <div class="dc-big" id="cardDateFull" style="font-size:18px;">26 de setembro de 2026</div>
+    </div>
+    <div class="dash-card" id="cardAppointments">
+      <div class="dc-title">🔔 Próximos compromissos</div>
+      <div id="apptList"><div class="dc-sub">Nenhum compromisso hoje</div></div>
+      <div id="apptForm" style="display:none; margin-top:8px;">
+        <input type="text" id="apptTitle" placeholder="Título" style="width:100%;margin-bottom:6px;padding:6px;border-radius:6px;border:1px solid var(--panel-border);background:rgba(255,255,255,0.06);color:var(--panel-fg);font-size:12px;">
+        <input type="datetime-local" id="apptDatetime" style="width:100%;margin-bottom:6px;padding:6px;border-radius:6px;border:1px solid var(--panel-border);background:rgba(255,255,255,0.06);color:var(--panel-fg);font-size:12px;">
+        <button id="apptSave" class="dc-btn" style="width:100%;">Salvar</button>
+      </div>
+      <button id="apptAddBtn" class="dc-btn" style="width:100%;margin-top:8px;">+ Adicionar</button>
+    </div>
+    <div class="dash-card" id="cardYearProgress">
+      <div class="dc-title">🗓 Dia do ano</div>
+      <div class="dc-sub" id="yearProgressLabel">269 / 365</div>
+      <div class="dc-bar"><div class="dc-bar-fill" id="yearProgressBar"></div></div>
+      <div class="dc-sub" id="yearProgressRemaining" style="margin-top:6px;">96 dias restantes</div>
+    </div>
+    <div class="dash-card" id="cardTimezone">
+      <div class="dc-title">🌐 Fuso horário</div>
+      <div class="dc-big" id="tzLabel" style="font-size:18px;">--</div>
+      <div class="dc-sub" id="tzSub">Hora local</div>
+    </div>
+  </div>
+
+  <div id="dashRight">
+    <div class="dash-card" id="cardWeather">
+      <div class="dc-title">⛅ <span id="weatherCity">Localizando...</span></div>
+      <div class="dc-big" id="weatherTemp">--°</div>
+      <div class="dc-sub" id="weatherDesc"></div>
+    </div>
+    <div class="dash-card" id="cardSun">
+      <div class="dc-title">☀️ Nascer e pôr do sol</div>
+      <div style="display:flex; justify-content:space-around; margin-top:8px;">
+        <div><div class="dc-sub">Nascer</div><div class="dc-big" id="sunrise" style="font-size:20px;">--:--</div></div>
+        <div><div class="dc-sub">Pôr</div><div class="dc-big" id="sunset" style="font-size:20px;">--:--</div></div>
+      </div>
+    </div>
+    <div class="dash-card" id="cardQuote">
+      <div class="dc-title">✏️ Frase do dia</div>
+      <div class="dc-sub" id="quoteText" contenteditable="true" style="font-size:14px; line-height:1.5; opacity:0.85; outline:none;">Sonhe. Planeje. Conquiste.</div>
+    </div>
+    <div class="dash-card" id="cardMusic">
+      <div class="dc-title">🎵 Música</div>
+      <input type="file" id="musicFileInput" accept="audio/*" multiple style="display:none;">
+      <div style="display:flex; gap:10px; align-items:center;">
+        <div id="musicCover">🎵</div>
+        <div style="flex:1; min-width:0;">
+          <div class="dc-sub" id="musicTitle" style="opacity:0.9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Nenhuma música</div>
+          <div class="dc-sub" id="musicCount"></div>
+        </div>
+      </div>
+      <audio id="audioPlayer"></audio>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button class="dc-btn" id="musicChoose">Escolher</button>
+        <button class="dc-btn" id="musicPrev">⏮</button>
+        <button class="dc-btn" id="musicPlay">▶</button>
+        <button class="dc-btn" id="musicNext">⏭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer id="dashFooter">DISCIPLINA · EVOLUÇÃO · LIBERDADE</footer>
+
 
 <div id="clockWrap">
+  <svg id="progressRing" viewBox="0 0 300 300">
+    <circle cx="150" cy="150" r="140" fill="none" stroke="var(--fg)" stroke-opacity="0.12" stroke-width="4"/>
+    <circle id="ringProgress" cx="150" cy="150" r="140" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" transform="rotate(-90 150 150)"/>
+  </svg>
   <div id="time">00:00</div>
   <svg id="analogClock" viewBox="0 0 200 200" width="min(55vw,50vh)" height="min(55vw,50vh)">
     <circle cx="100" cy="100" r="94" fill="none" stroke="var(--fg)" stroke-width="3" opacity="0.3"/>
@@ -532,8 +656,9 @@ body.has-bg-image{ background-size:cover; background-position:center; background
   <div class="group">
     <label>Imagens soltas na tela</label>
     <input type="file" id="layerImageInput" accept="image/*" style="display:none;">
-    <button id="addLayerBtn" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--panel-border);background:rgba(255,255,255,0.08);color:var(--panel-fg);font-weight:600;cursor:pointer;font-size:14px;">+ Adicionar imagem</button>
-    <div style="font-size:12px;opacity:0.6;margin-top:8px;">Toque no ícone 🖼 (canto superior esquerdo) pra ativar o modo de edição: aí é só arrastar a imagem, e usar a barrinha que aparece embaixo pra redimensionar, girar e ajustar opacidade. Pode adicionar quantas quiser.</div>
+    <button id="addLayerBtn" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--panel-border);background:rgba(255,255,255,0.08);color:var(--panel-fg);font-weight:600;cursor:pointer;font-size:14px;margin-bottom:8px;">+ Adicionar imagem</button>
+    <button id="editModeBtn" title="Editar imagens na tela" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--panel-border);background:rgba(255,255,255,0.08);color:var(--panel-fg);font-weight:600;cursor:pointer;font-size:14px;">🖼 Ativar modo de edição</button>
+    <div style="font-size:12px;opacity:0.6;margin-top:8px;">Com o modo de edição ativo, é só arrastar a imagem na tela, e usar a barrinha que aparece embaixo pra redimensionar, girar e ajustar opacidade. Pode adicionar quantas quiser.</div>
   </div>
 
   <div class="group">
@@ -593,7 +718,8 @@ body.has-bg-image{ background-size:cover; background-position:center; background
     bgImage:'', textImage:'',
     bgFilter:{brightness:100, contrast:100, saturate:100, blur:0, overlay:35, fit:'cover', posX:50, posY:50,
       hue:0, gray:0, sepia:0, vignette:0, grain:0, zoom:100, rotate:0, invert:0, flipH:false, flipV:false},
-    layers:[]
+    layers:[],
+    appointments:[]
   };
 
   let state = {...defaults};
@@ -677,6 +803,10 @@ body.has-bg-image{ background-size:cover; background-position:center; background
 
   function pad(n){ return n.toString().padStart(2,'0'); }
 
+  const RING_C = 2 * Math.PI * 140;
+  const ringEl = $('ringProgress');
+  ringEl.style.strokeDasharray = RING_C;
+
   function tick(){
     const now = new Date();
     let h = now.getHours();
@@ -705,6 +835,9 @@ body.has-bg-image{ background-size:cover; background-position:center; background
     } else {
       dateEl.style.display='none';
     }
+
+    const progress = (now.getSeconds()*1000 + now.getMilliseconds()) / 60000;
+    ringEl.style.strokeDashoffset = RING_C * (1 - progress);
   }
   tick();
   setInterval(tick, 250);
@@ -716,14 +849,40 @@ body.has-bg-image{ background-size:cover; background-position:center; background
   closePanel.onclick = closePanelFn;
   overlay.onclick = closePanelFn;
 
-  // Fullscreen
-  function toggleFullscreen(){
+  // Fullscreen + tela sempre acesa + trava de orientação (celular)
+  let wakeLock = null;
+  async function enterFullscreenExtras(){
+    try{
+      if(screen.orientation && screen.orientation.lock){
+        await screen.orientation.lock('landscape').catch(()=>{});
+      }
+    }catch(e){}
+    try{
+      if('wakeLock' in navigator){
+        wakeLock = await navigator.wakeLock.request('screen');
+      }
+    }catch(e){}
+  }
+  function exitFullscreenExtras(){
+    if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock=null; }
+    try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){}
+  }
+  async function toggleFullscreen(){
     if(!document.fullscreenElement){
-      document.documentElement.requestFullscreen().catch(()=>{});
+      await document.documentElement.requestFullscreen().catch(()=>{});
     } else {
       document.exitFullscreen().catch(()=>{});
     }
   }
+  document.addEventListener('fullscreenchange', ()=>{
+    if(document.fullscreenElement) enterFullscreenExtras();
+    else exitFullscreenExtras();
+  });
+  document.addEventListener('visibilitychange', async ()=>{
+    if(document.visibilityState==='visible' && document.fullscreenElement && !wakeLock && 'wakeLock' in navigator){
+      try{ wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+    }
+  });
   fsBtn.onclick = toggleFullscreen;
   clockWrap.onclick = toggleFullscreen;
   document.addEventListener('keydown', e=>{
@@ -912,13 +1071,163 @@ body.has-bg-image{ background-size:cover; background-position:center; background
     if(!state.dynamicWallpaper) return;
     const hr = new Date().getHours();
     let bg,fg;
-    if(hr>=6 && hr<11){ bg='#cfe8ff'; fg='#0a2540'; }
-    else if(hr>=11 && hr<17){ bg='#eaf4ff'; fg='#0a2540'; }
-    else if(hr>=17 && hr<20){ bg='#3a1f3d'; fg='#ffd9a0'; }
-    else { bg='#05050a'; fg='#e8e8f0'; }
+    if(hr>=6 && hr<11){ bg='#0b1a2e'; fg='#eaf4ff'; }       // manhã: azul-marinho claro
+    else if(hr>=11 && hr<17){ bg='#0d1524'; fg='#f0f6ff'; } // tarde: azul-marinho neutro
+    else if(hr>=17 && hr<20){ bg='#1c1024'; fg='#ffd9a0'; } // entardecer: roxo/laranja escuro
+    else { bg='#05050a'; fg='#e8e8f0'; }                    // noite: quase preto
     document.documentElement.style.setProperty('--bg', bg);
     document.documentElement.style.setProperty('--fg', fg);
   }
+
+  // ---------- Cards do painel: data, dia do ano, fuso horário ----------
+  function updateDashCards(){
+    const now = new Date();
+    $('cardDateWeekday').textContent = now.toLocaleDateString(state.locale, {weekday:'long'});
+    $('cardDateFull').textContent = now.toLocaleDateString(state.locale, {day:'numeric', month:'long', year:'numeric'});
+
+    const start = new Date(now.getFullYear(),0,0);
+    const diff = now - start;
+    const dayOfYear = Math.floor(diff/86400000);
+    const totalDays = (new Date(now.getFullYear(),11,31)).getDate()===31 ? (isLeapYear(now.getFullYear())?366:365) : 365;
+    $('yearProgressLabel').textContent = `${dayOfYear} / ${totalDays}`;
+    $('yearProgressBar').style.width = (dayOfYear/totalDays*100)+'%';
+    $('yearProgressRemaining').textContent = `${totalDays-dayOfYear} dias restantes`;
+
+    const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const offsetMin = -now.getTimezoneOffset();
+    const offsetH = (offsetMin>=0?'+':'-') + Math.floor(Math.abs(offsetMin)/60);
+    $('tzLabel').textContent = `UTC${offsetH}`;
+    $('tzSub').textContent = tzName;
+  }
+  function isLeapYear(y){ return (y%4===0 && y%100!==0) || y%400===0; }
+  setInterval(updateDashCards, 60000);
+  updateDashCards();
+
+  // ---------- Próximos compromissos ----------
+  function renderAppointments(){
+    const now = new Date();
+    const upcoming = state.appointments
+      .filter(a=> new Date(a.datetime) >= now)
+      .sort((a,b)=> new Date(a.datetime)-new Date(b.datetime))
+      .slice(0,3);
+    const list = $('apptList');
+    if(upcoming.length===0){
+      list.innerHTML = '<div class="dc-sub">Nenhum compromisso hoje</div>';
+      return;
+    }
+    list.innerHTML = upcoming.map(a=>{
+      const d = new Date(a.datetime);
+      const dateLabel = d.toLocaleDateString(state.locale,{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString(state.locale,{hour:'2-digit',minute:'2-digit'});
+      return `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:6px;gap:6px;">
+        <div><div class="dc-sub" style="opacity:0.9;">${a.title}</div><div class="dc-sub">${dateLabel}</div></div>
+        <button data-id="${a.id}" class="apptDelete" style="background:none;border:none;color:var(--panel-fg);opacity:0.5;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('.apptDelete').forEach(btn=>{
+      btn.onclick = ()=>{
+        state.appointments = state.appointments.filter(a=>a.id!==btn.dataset.id);
+        renderAppointments(); save();
+      };
+    });
+  }
+  $('apptAddBtn').onclick = ()=>{
+    $('apptForm').style.display = $('apptForm').style.display==='none' ? 'block' : 'none';
+  };
+  $('apptSave').onclick = ()=>{
+    const title = $('apptTitle').value.trim();
+    const dt = $('apptDatetime').value;
+    if(!title || !dt) return;
+    state.appointments.push({id:Date.now().toString(), title, datetime:dt});
+    $('apptTitle').value=''; $('apptDatetime').value='';
+    $('apptForm').style.display='none';
+    renderAppointments(); save();
+  };
+  renderAppointments();
+  setInterval(renderAppointments, 60000);
+
+  // ---------- Bateria (quando o navegador suportar) ----------
+  if('getBattery' in navigator){
+    navigator.getBattery().then(bat=>{
+      function renderBattery(){
+        const pct = Math.round(bat.level*100);
+        $('batteryPct').textContent = pct+'%';
+        $('batteryBar').style.width = pct+'%';
+        $('batterySub').textContent = bat.charging ? 'Carregando' : 'Descarregando';
+      }
+      renderBattery();
+      bat.addEventListener('levelchange', renderBattery);
+      bat.addEventListener('chargingchange', renderBattery);
+    }).catch(()=>{});
+  }
+
+  // ---------- Clima + nascer/pôr do sol (Open-Meteo, sem chave, sem servidor) ----------
+  if('geolocation' in navigator){
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      const {latitude, longitude} = pos.coords;
+      try{
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=auto`;
+        const res = await fetch(url);
+        const data = await res.json();
+        $('weatherTemp').textContent = Math.round(data.current.temperature_2m)+'°';
+        $('weatherDesc').textContent = weatherCodeLabel(data.current.weather_code);
+        $('sunrise').textContent = data.daily.sunrise[0].slice(11,16);
+        $('sunset').textContent = data.daily.sunset[0].slice(11,16);
+        try{
+          const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${latitude}&longitude=${longitude}&language=pt`);
+          const geo = await geoRes.json();
+          if(geo.results && geo.results[0]) $('weatherCity').textContent = geo.results[0].name;
+          else $('weatherCity').textContent = 'Sua localização';
+        }catch(e){ $('weatherCity').textContent = 'Sua localização'; }
+      }catch(e){ $('weatherCity').textContent = 'Indisponível'; }
+    }, ()=>{ $('weatherCity').textContent = 'Localização não permitida'; });
+  } else {
+    $('weatherCity').textContent = 'Não suportado';
+  }
+  function weatherCodeLabel(code){
+    if(code===0) return 'Céu limpo';
+    if([1,2,3].includes(code)) return 'Parcialmente nublado';
+    if([45,48].includes(code)) return 'Neblina';
+    if([51,53,55,61,63,65,80,81,82].includes(code)) return 'Chuva';
+    if([71,73,75,77,85,86].includes(code)) return 'Neve';
+    if([95,96,99].includes(code)) return 'Tempestade';
+    return 'Nublado';
+  }
+
+  // ---------- Player de música (arquivos locais do seu celular/PC) ----------
+  const audioPlayer = $('audioPlayer');
+  let musicFiles = [], musicIndex = 0;
+  $('musicChoose').onclick = ()=> $('musicFileInput').click();
+  $('musicFileInput').onchange = e=>{
+    musicFiles = Array.from(e.target.files);
+    if(musicFiles.length){
+      musicIndex = 0;
+      loadMusic();
+    }
+  };
+  function loadMusic(){
+    const file = musicFiles[musicIndex];
+    if(!file) return;
+    audioPlayer.src = URL.createObjectURL(file);
+    $('musicTitle').textContent = file.name.replace(/\.[^/.]+$/, '');
+    $('musicCount').textContent = musicFiles.length>1 ? `Faixa ${musicIndex+1} de ${musicFiles.length}` : '';
+    audioPlayer.play();
+    $('musicPlay').textContent = '⏸';
+    $('musicCover').style.animation = 'spin 3s linear infinite';
+  }
+  $('musicPlay').onclick = ()=>{
+    if(!audioPlayer.src) return;
+    if(audioPlayer.paused){ audioPlayer.play(); $('musicPlay').textContent='⏸'; $('musicCover').style.animation='spin 3s linear infinite'; }
+    else { audioPlayer.pause(); $('musicPlay').textContent='▶'; $('musicCover').style.animation='none'; }
+  };
+  $('musicNext').onclick = ()=>{
+    if(!musicFiles.length) return;
+    musicIndex = (musicIndex+1)%musicFiles.length; loadMusic();
+  };
+  $('musicPrev').onclick = ()=>{
+    if(!musicFiles.length) return;
+    musicIndex = (musicIndex-1+musicFiles.length)%musicFiles.length; loadMusic();
+  };
+  audioPlayer.addEventListener('ended', ()=>{ if(musicFiles.length>1) $('musicNext').onclick(); else { $('musicPlay').textContent='▶'; $('musicCover').style.animation='none'; } });
 
   // extend the main tick loop
   setInterval(()=>{ updateExtraClocks(); updateAnalog(); updateWallpaper(); }, 1000);
@@ -935,7 +1244,29 @@ body.has-bg-image{ background-size:cover; background-position:center; background
   $('openAlarm').onclick = ()=>openTool('alarm');
   $('openTimer').onclick = ()=>openTool('timer');
   $('openStopwatch').onclick = ()=>openTool('stopwatch');
-  $('toolClose').onclick = ()=> toolWidget.classList.remove('open');
+
+  function showView(view){
+    document.querySelectorAll('.nav-item').forEach(b=> b.classList.toggle('active', b.dataset.view===view));
+    if(view==='clock'){
+      toolWidget.classList.remove('open');
+      clockWrap.style.display='';
+    } else if(view==='settings' || view==='files'){
+      openPanel();
+      document.querySelector('.nav-item[data-view="clock"]').classList.add('active');
+      if(view==='files'){
+        const backupGroup = $('exportBtn').closest('.group');
+        if(backupGroup) backupGroup.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+    } else {
+      clockWrap.style.display='none';
+      openTool(view);
+    }
+  }
+  document.querySelectorAll('.nav-item').forEach(btn=>{
+    btn.onclick = ()=> showView(btn.dataset.view);
+  });
+  $('alarmIconBtn').onclick = ()=> showView('alarm');
+  $('toolClose').onclick = ()=> showView('clock');
   document.querySelectorAll('.tool-tab').forEach(b=> b.onclick = ()=>openTool(b.dataset.tab));
 
   function beep(){
@@ -1275,7 +1606,9 @@ body.has-bg-image{ background-size:cover; background-position:center; background
   editModeBtn.onclick = ()=>{
     document.body.classList.toggle('edit-mode');
     editModeBtn.classList.toggle('active');
-    if(!document.body.classList.contains('edit-mode')){ layerToolbar.classList.remove('open'); selectedLayerId=null; }
+    const active = document.body.classList.contains('edit-mode');
+    editModeBtn.textContent = active ? '🖼 Desativar modo de edição' : '🖼 Ativar modo de edição';
+    if(!active){ layerToolbar.classList.remove('open'); selectedLayerId=null; }
   };
 
   $('addLayerBtn').onclick = ()=> $('layerImageInput').click();
@@ -1351,5 +1684,13 @@ body.has-bg-image{ background-size:cover; background-position:center; background
   };
 })();
 </script>
+
+<nav id="bottomNav">
+  <button class="nav-item active" data-view="clock"><span class="nav-icon">🕐</span>Relógio</button>
+  <button class="nav-item" data-view="stopwatch"><span class="nav-icon">⏱</span>Cronômetro</button>
+  <button class="nav-item" data-view="timer"><span class="nav-icon">⏳</span>Temporizador</button>
+  <button class="nav-item" data-view="files"><span class="nav-icon">📁</span>Arquivos</button>
+  <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span>Configurações</button>
+</nav>
 </body>
 </html>
