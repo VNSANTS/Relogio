@@ -229,12 +229,87 @@
   #toolToggleBtns button{ flex:1; padding:8px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.08); color:var(--panel-fg); cursor:pointer; font-size:12px; }
   .shortcuts-list{ font-size:12px; opacity:0.7; line-height:1.8; }
   #backupBtns{ display:flex; gap:8px; }
+  .img-group-btns{ display:flex; gap:8px; }
+  .img-group-btns button{ flex:1; padding:9px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.08); color:var(--panel-fg); cursor:pointer; font-size:12px; }
+  #time.text-image-fill{
+    background-size:cover; background-position:center; background-repeat:no-repeat;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:none;
+  }
+  #time.text-image-fill .accent{ -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #bgImg{ position:fixed; inset:0; width:100%; height:100%; z-index:-2; display:none; }
+  #bgOverlay{ position:fixed; inset:0; z-index:-1; background:#000; opacity:0; pointer-events:none; }
+  #layersContainer{ position:fixed; inset:0; z-index:5; pointer-events:none; }
+  body.edit-mode #layersContainer{ pointer-events:auto; }
+  .layer-img{ position:absolute; cursor:grab; touch-action:none; border-radius:4px; user-select:none; }
+  body.edit-mode .layer-img{ outline:2px dashed var(--accent); outline-offset:2px; }
+  #editModeBtn{
+    position:fixed; top:calc(env(safe-area-inset-top,0px) + 16px); left:16px;
+    width:44px;height:44px;border-radius:50%;
+    border:1px solid var(--panel-border); background:var(--panel-bg); color:var(--panel-fg);
+    display:flex;align-items:center;justify-content:center; cursor:pointer;
+    opacity:0; transition:opacity .25s ease; z-index:20; font-size:18px;
+  }
+  body:hover #editModeBtn, #editModeBtn.show{ opacity:0.85; }
+  #editModeBtn.active{ opacity:1; background:var(--accent); color:#0a0a0a; }
+  #layerToolbar{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--panel-bg); border:1px solid var(--panel-border); border-radius:12px;
+    padding:12px 16px; display:none; gap:12px; align-items:center; z-index:50;
+    backdrop-filter:blur(10px); font-family:'Segoe UI', system-ui, sans-serif;
+  }
+  #layerToolbar.open{ display:flex; }
+  #layerToolbar .lt-group{ display:flex; flex-direction:column; align-items:center; font-size:10px; color:var(--panel-fg); opacity:0.8; }
+  #layerToolbar input[type=range]{ width:70px; accent-color:var(--accent); }
+  #layerToolbar button{ background:rgba(255,255,255,0.1); border:none; color:var(--panel-fg); border-radius:6px; padding:8px 10px; cursor:pointer; font-size:13px; }
+  .bg-slider-row{ display:flex; justify-content:space-between; font-size:11px; opacity:0.6; margin-bottom:2px; }
+body.has-bg-image{ background-size:cover; background-position:center; background-repeat:no-repeat; }
+  #bgVignette{ position:fixed; inset:0; z-index:-1; pointer-events:none; background:radial-gradient(ellipse at center, transparent 35%, #000 105%); opacity:0; }
+  #bgGrain{ position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:0; mix-blend-mode:overlay; background-repeat:repeat; }
+  .preset-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .preset-chip{ padding:6px 10px; font-size:11px; border-radius:20px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.06); color:var(--panel-fg); cursor:pointer; }
+  .preset-chip:hover{ background:var(--accent); color:#0a0a0a; }
+  .mini-toggle-row{ display:flex; gap:8px; margin-top:8px; }
+  .mini-toggle-row button{ flex:1; padding:8px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.08); color:var(--panel-fg); cursor:pointer; font-size:12px; }
+  .mini-toggle-row button.on{ background:var(--accent); color:#0a0a0a; }
+  #layerToolbar{ flex-wrap:wrap; max-width:94vw; max-height:70vh; overflow-y:auto; }
+  #layerMoreBtn{ background:rgba(255,255,255,0.15); }
+  .lt-extra{ display:none; width:100%; flex-wrap:wrap; gap:10px; justify-content:center; border-top:1px solid var(--panel-border); margin-top:8px; padding-top:8px; }
+  .lt-extra.open{ display:flex; }
   #backupBtns button{ flex:1; padding:9px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.08); color:var(--panel-fg); cursor:pointer; font-size:13px; }
 </style>
 </head>
 <body>
 
+<img id="bgImg" alt="">
+<div id="bgOverlay"></div>
+<div id="bgVignette"></div>
+<div id="bgGrain"></div>
+<div id="layersContainer"></div>
 <div id="overlay"></div>
+
+<button id="editModeBtn" title="Editar imagens na tela">🖼</button>
+
+<div id="layerToolbar">
+  <div class="lt-group">Tamanho<input type="range" id="layerScale" min="40" max="900" value="200"></div>
+  <div class="lt-group">Girar<input type="range" id="layerRotation" min="0" max="360" value="0"></div>
+  <div class="lt-group">Opacidade<input type="range" id="layerOpacity" min="10" max="100" value="100"></div>
+  <button id="layerMoreBtn">⋯</button>
+  <button id="layerFront">Frente</button>
+  <button id="layerDelete">Excluir</button>
+  <div class="lt-extra" id="layerExtra">
+    <div class="lt-group">Brilho<input type="range" id="lyBrightness" min="30" max="170" value="100"></div>
+    <div class="lt-group">Contraste<input type="range" id="lyContrast" min="30" max="170" value="100"></div>
+    <div class="lt-group">Saturação<input type="range" id="lySaturate" min="0" max="200" value="100"></div>
+    <div class="lt-group">Matiz<input type="range" id="lyHue" min="0" max="360" value="0"></div>
+    <div class="lt-group">P&B<input type="range" id="lyGray" min="0" max="100" value="0"></div>
+    <div class="lt-group">Sépia<input type="range" id="lySepia" min="0" max="100" value="0"></div>
+    <div class="lt-group">Desfoque<input type="range" id="lyBlur" min="0" max="15" value="0"></div>
+    <div class="lt-group">Moldura<input type="range" id="lyBorder" min="0" max="20" value="0"></div>
+    <div class="lt-group">Cantos<input type="range" id="lyRadius" min="0" max="50" value="0"></div>
+    <button id="lyInvert">Inverter cores</button>
+  </div>
+</div>
 
 <button id="fsBtn" title="Tela cheia (F)">⛶</button>
 <button id="gearBtn" title="Personalizar">⚙</button>
@@ -387,6 +462,91 @@
   </div>
 
   <div class="group">
+    <label>Imagem de fundo</label>
+    <input type="file" id="bgImageInput" accept="image/*" style="display:none;">
+    <div class="img-group-btns">
+      <button id="bgImageChoose">Escolher</button>
+      <button id="bgImageRemove">Remover</button>
+    </div>
+    <div id="bgImageMsg" style="font-size:12px;opacity:0.6;margin-top:6px;"></div>
+  </div>
+
+  <div class="group">
+    <label>Ajustes da imagem de fundo</label>
+    <div class="bg-slider-row"><span>Brilho</span><span id="vBrightness">100%</span></div>
+    <input type="range" id="bgBrightness" min="30" max="170" value="100">
+    <div class="bg-slider-row"><span>Contraste</span><span id="vContrast">100%</span></div>
+    <input type="range" id="bgContrast" min="30" max="170" value="100">
+    <div class="bg-slider-row"><span>Saturação</span><span id="vSaturate">100%</span></div>
+    <input type="range" id="bgSaturate" min="0" max="200" value="100">
+    <div class="bg-slider-row"><span>Desfoque</span><span id="vBlur">0px</span></div>
+    <input type="range" id="bgBlur" min="0" max="20" value="0">
+    <div class="bg-slider-row"><span>Escurecer</span><span id="vOverlay">35%</span></div>
+    <input type="range" id="bgOverlayRange" min="0" max="85" value="35">
+    <div class="bg-slider-row"><span>Posição horizontal</span><span id="vPosX">50%</span></div>
+    <input type="range" id="bgPosX" min="0" max="100" value="50">
+    <div class="bg-slider-row"><span>Posição vertical</span><span id="vPosY">50%</span></div>
+    <input type="range" id="bgPosY" min="0" max="100" value="50">
+    <label style="margin-top:6px;">Ajuste</label>
+    <select id="bgFit">
+      <option value="cover">Cobrir a tela</option>
+      <option value="contain">Conter (mostrar tudo)</option>
+      <option value="fill">Esticar</option>
+    </select>
+
+    <div class="bg-slider-row" style="margin-top:10px;"><span>Matiz</span><span id="vHue">0°</span></div>
+    <input type="range" id="bgHue" min="0" max="360" value="0">
+    <div class="bg-slider-row"><span>Preto e branco</span><span id="vGray">0%</span></div>
+    <input type="range" id="bgGray" min="0" max="100" value="0">
+    <div class="bg-slider-row"><span>Sépia</span><span id="vSepia">0%</span></div>
+    <input type="range" id="bgSepia" min="0" max="100" value="0">
+    <div class="bg-slider-row"><span>Vinheta</span><span id="vVignette">0%</span></div>
+    <input type="range" id="bgVignetteRange" min="0" max="100" value="0">
+    <div class="bg-slider-row"><span>Grão</span><span id="vGrain">0%</span></div>
+    <input type="range" id="bgGrainRange" min="0" max="100" value="0">
+    <div class="bg-slider-row"><span>Zoom</span><span id="vZoom">100%</span></div>
+    <input type="range" id="bgZoom" min="100" max="300" value="100">
+    <div class="bg-slider-row"><span>Girar</span><span id="vRotate">0°</span></div>
+    <input type="range" id="bgRotate" min="0" max="360" value="0">
+
+    <div class="mini-toggle-row">
+      <button id="bgInvert">Inverter cores</button>
+      <button id="bgFlipH">Espelhar H</button>
+      <button id="bgFlipV">Espelhar V</button>
+    </div>
+
+    <label style="margin-top:10px;">Filtros prontos</label>
+    <div class="preset-chips">
+      <span class="preset-chip" data-preset="none">Nenhum</span>
+      <span class="preset-chip" data-preset="bw">P&B</span>
+      <span class="preset-chip" data-preset="vintage">Vintage</span>
+      <span class="preset-chip" data-preset="warm">Quente</span>
+      <span class="preset-chip" data-preset="cool">Frio</span>
+      <span class="preset-chip" data-preset="dramatic">Dramático</span>
+      <span class="preset-chip" data-preset="faded">Desbotado</span>
+      <span class="preset-chip" data-preset="cinema">Cinema</span>
+      <span class="preset-chip" data-preset="polaroid">Polaroid</span>
+    </div>
+  </div>
+
+  <div class="group">
+    <label>Imagens soltas na tela</label>
+    <input type="file" id="layerImageInput" accept="image/*" style="display:none;">
+    <button id="addLayerBtn" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--panel-border);background:rgba(255,255,255,0.08);color:var(--panel-fg);font-weight:600;cursor:pointer;font-size:14px;">+ Adicionar imagem</button>
+    <div style="font-size:12px;opacity:0.6;margin-top:8px;">Toque no ícone 🖼 (canto superior esquerdo) pra ativar o modo de edição: aí é só arrastar a imagem, e usar a barrinha que aparece embaixo pra redimensionar, girar e ajustar opacidade. Pode adicionar quantas quiser.</div>
+  </div>
+
+  <div class="group">
+    <label>Imagem dentro dos números</label>
+    <input type="file" id="textImageInput" accept="image/*" style="display:none;">
+    <div class="img-group-btns">
+      <button id="textImageChoose">Escolher</button>
+      <button id="textImageRemove">Remover</button>
+    </div>
+    <div id="textImageMsg" style="font-size:12px;opacity:0.6;margin-top:6px;"></div>
+  </div>
+
+  <div class="group">
     <label>Backup</label>
     <div id="backupBtns">
       <button id="exportBtn">Exportar</button>
@@ -429,7 +589,11 @@
     fmt24:'24', showSeconds:true, showDate:true, accentSeconds:true,
     accent:'#7dd3fc', theme:'dark', bg:'#0a0a0a', fg:'#f5f5f5',
     font:"'Segoe UI', system-ui, sans-serif", locale:'pt-BR', useCustomColors:false,
-    scale:100, mode:'digital', tz1:'', tz2:'', dynamicWallpaper:false
+    scale:100, mode:'digital', tz1:'', tz2:'', dynamicWallpaper:false,
+    bgImage:'', textImage:'',
+    bgFilter:{brightness:100, contrast:100, saturate:100, blur:0, overlay:35, fit:'cover', posX:50, posY:50,
+      hue:0, gray:0, sepia:0, vignette:0, grain:0, zoom:100, rotate:0, invert:0, flipH:false, flipV:false},
+    layers:[]
   };
 
   let state = {...defaults};
@@ -493,6 +657,21 @@
     $('toggleWallpaper').classList.toggle('on', state.dynamicWallpaper);
     document.getElementById('time').style.display = state.mode==='analog' ? 'none' : '';
     document.getElementById('analogClock').style.display = state.mode==='analog' ? 'block' : 'none';
+
+    applyBgImage();
+    syncBgControls();
+    renderLayers();
+    $('bgImageMsg').textContent = state.bgImage ? 'Imagem definida ✓' : 'Nenhuma imagem definida.';
+
+    if(state.textImage){
+      timeEl.style.backgroundImage = `url(${state.textImage})`;
+      timeEl.classList.add('text-image-fill');
+    } else {
+      timeEl.style.backgroundImage = '';
+      timeEl.classList.remove('text-image-fill');
+    }
+    $('textImageMsg').textContent = state.textImage ? 'Imagem definida ✓' : 'Nenhuma imagem definida.';
+
     buildSwatches();
   }
 
@@ -866,6 +1045,310 @@
   document.addEventListener('keydown', e=>{
     if(e.key.toLowerCase()==='p' && !panel.contains(document.activeElement)) togglePip();
   });
+
+  // ---------- Imagem de fundo / imagem dentro do texto ----------
+  function resizeImageFile(file, maxDim, quality){
+    return new Promise((resolve, reject)=>{
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        img.onload = ()=>{
+          let w = img.width, h = img.height;
+          if(w > h && w > maxDim){ h = h*(maxDim/w); w = maxDim; }
+          else if(h > maxDim){ w = w*(maxDim/h); h = maxDim; }
+          const cv = document.createElement('canvas');
+          cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(cv.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  $('bgImageChoose').onclick = ()=> $('bgImageInput').click();
+  $('bgImageInput').onchange = async e=>{
+    const file = e.target.files[0]; if(!file) return;
+    $('bgImageMsg').textContent = 'Processando...';
+    try{
+      state.bgImage = await resizeImageFile(file, 1600, 0.75);
+      applyState(); save();
+    }catch(err){ $('bgImageMsg').textContent = 'Não foi possível carregar essa imagem.'; }
+  };
+  $('bgImageRemove').onclick = ()=>{ state.bgImage=''; applyState(); save(); };
+
+  $('textImageChoose').onclick = ()=> $('textImageInput').click();
+  $('textImageInput').onchange = async e=>{
+    const file = e.target.files[0]; if(!file) return;
+    $('textImageMsg').textContent = 'Processando...';
+    try{
+      state.textImage = await resizeImageFile(file, 900, 0.8);
+      applyState(); save();
+    }catch(err){ $('textImageMsg').textContent = 'Não foi possível carregar essa imagem.'; }
+  };
+  $('textImageRemove').onclick = ()=>{ state.textImage=''; applyState(); save(); };
+
+  // ---------- Filtros da imagem de fundo ----------
+  function filterCss(f){
+    return `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) hue-rotate(${f.hue}deg) grayscale(${f.gray}%) sepia(${f.sepia}%) blur(${f.blur}px) invert(${f.invert}%)`;
+  }
+
+  // Textura de grão gerada uma vez localmente (sem download)
+  let grainDataUrl = null;
+  function getGrainDataUrl(){
+    if(grainDataUrl) return grainDataUrl;
+    const cv = document.createElement('canvas'); cv.width=140; cv.height=140;
+    const cx = cv.getContext('2d');
+    const id = cx.createImageData(140,140);
+    for(let i=0;i<id.data.length;i+=4){
+      const v = Math.random()*255;
+      id.data[i]=v; id.data[i+1]=v; id.data[i+2]=v; id.data[i+3]=255;
+    }
+    cx.putImageData(id,0,0);
+    grainDataUrl = cv.toDataURL('image/png');
+    return grainDataUrl;
+  }
+
+  function applyBgImage(){
+    const f = state.bgFilter;
+    const img = $('bgImg');
+    if(state.bgImage){
+      img.src = state.bgImage;
+      img.style.display = 'block';
+      img.style.objectFit = f.fit;
+      img.style.objectPosition = f.posX+'% '+f.posY+'%';
+      img.style.filter = filterCss(f);
+      img.style.transform = `scale(${(f.zoom/100)*(f.flipH?-1:1)}, ${(f.zoom/100)*(f.flipV?-1:1)}) rotate(${f.rotate}deg)`;
+      img.style.transformOrigin = 'center center';
+      $('bgOverlay').style.opacity = f.overlay/100;
+      $('bgVignette').style.opacity = f.vignette/100;
+      const grainEl = $('bgGrain');
+      grainEl.style.backgroundImage = `url(${getGrainDataUrl()})`;
+      grainEl.style.opacity = f.grain/100 * 0.5;
+    } else {
+      img.style.display = 'none';
+      $('bgOverlay').style.opacity = 0;
+      $('bgVignette').style.opacity = 0;
+      $('bgGrain').style.opacity = 0;
+    }
+  }
+  function syncBgControls(){
+    const f = state.bgFilter;
+    $('bgBrightness').value=f.brightness; $('vBrightness').textContent=f.brightness+'%';
+    $('bgContrast').value=f.contrast; $('vContrast').textContent=f.contrast+'%';
+    $('bgSaturate').value=f.saturate; $('vSaturate').textContent=f.saturate+'%';
+    $('bgBlur').value=f.blur; $('vBlur').textContent=f.blur+'px';
+    $('bgOverlayRange').value=f.overlay; $('vOverlay').textContent=f.overlay+'%';
+    $('bgPosX').value=f.posX; $('vPosX').textContent=f.posX+'%';
+    $('bgPosY').value=f.posY; $('vPosY').textContent=f.posY+'%';
+    $('bgFit').value=f.fit;
+    $('bgHue').value=f.hue; $('vHue').textContent=f.hue+'°';
+    $('bgGray').value=f.gray; $('vGray').textContent=f.gray+'%';
+    $('bgSepia').value=f.sepia; $('vSepia').textContent=f.sepia+'%';
+    $('bgVignetteRange').value=f.vignette; $('vVignette').textContent=f.vignette+'%';
+    $('bgGrainRange').value=f.grain; $('vGrain').textContent=f.grain+'%';
+    $('bgZoom').value=f.zoom; $('vZoom').textContent=f.zoom+'%';
+    $('bgRotate').value=f.rotate; $('vRotate').textContent=f.rotate+'°';
+    $('bgInvert').classList.toggle('on', f.invert>0);
+    $('bgFlipH').classList.toggle('on', f.flipH);
+    $('bgFlipV').classList.toggle('on', f.flipV);
+  }
+  const bgSliderMap = {
+    bgBrightness:['brightness','vBrightness','%'], bgContrast:['contrast','vContrast','%'],
+    bgSaturate:['saturate','vSaturate','%'], bgBlur:['blur','vBlur','px'],
+    bgOverlayRange:['overlay','vOverlay','%'], bgPosX:['posX','vPosX','%'], bgPosY:['posY','vPosY','%']
+  };
+  Object.keys(bgSliderMap).forEach(id=>{
+    const [key, out, unit] = bgSliderMap[id];
+    $(id).oninput = e=>{
+      state.bgFilter[key] = parseInt(e.target.value,10);
+      $(out).textContent = e.target.value+unit;
+      applyBgImage();
+    };
+    $(id).onchange = ()=> save();
+  });
+  $('bgFit').onchange = e=>{ state.bgFilter.fit=e.target.value; applyBgImage(); save(); };
+
+  const bgSliderMap2 = {
+    bgHue:['hue','vHue','°'], bgGray:['gray','vGray','%'], bgSepia:['sepia','vSepia','%'],
+    bgVignetteRange:['vignette','vVignette','%'], bgGrainRange:['grain','vGrain','%'],
+    bgZoom:['zoom','vZoom','%'], bgRotate:['rotate','vRotate','°']
+  };
+  Object.keys(bgSliderMap2).forEach(id=>{
+    const [key, out, unit] = bgSliderMap2[id];
+    $(id).oninput = e=>{
+      state.bgFilter[key] = parseInt(e.target.value,10);
+      $(out).textContent = e.target.value+unit;
+      applyBgImage();
+    };
+    $(id).onchange = ()=> save();
+  });
+  $('bgInvert').onclick = ()=>{ state.bgFilter.invert = state.bgFilter.invert>0?0:100; applyBgImage(); syncBgControls(); save(); };
+  $('bgFlipH').onclick = ()=>{ state.bgFilter.flipH = !state.bgFilter.flipH; applyBgImage(); syncBgControls(); save(); };
+  $('bgFlipV').onclick = ()=>{ state.bgFilter.flipV = !state.bgFilter.flipV; applyBgImage(); syncBgControls(); save(); };
+
+  const bgPresets = {
+    none:   {brightness:100,contrast:100,saturate:100,hue:0,gray:0,sepia:0,vignette:0,grain:0,overlay:35},
+    bw:     {gray:100,contrast:115},
+    vintage:{sepia:35,contrast:95,saturate:85,vignette:30,grain:20},
+    warm:   {saturate:120,brightness:106,sepia:12,hue:352},
+    cool:   {saturate:105,brightness:100,hue:12,contrast:105},
+    dramatic:{contrast:140,saturate:70,vignette:45},
+    faded:  {contrast:80,saturate:70,brightness:112,overlay:12},
+    cinema: {contrast:115,saturate:90,sepia:10,vignette:35},
+    polaroid:{sepia:20,contrast:95,saturate:112,vignette:15,grain:15}
+  };
+  document.querySelectorAll('.preset-chip').forEach(chip=>{
+    chip.onclick = ()=>{
+      const p = bgPresets[chip.dataset.preset];
+      state.bgFilter = {...defaults.bgFilter, ...p};
+      applyBgImage(); syncBgControls(); save();
+    };
+  });
+
+  // ---------- Imagens soltas (camadas arrastáveis) ----------
+  const layersContainer = $('layersContainer');
+  const editModeBtn = $('editModeBtn');
+  const layerToolbar = $('layerToolbar');
+  let selectedLayerId = null;
+
+  function renderLayers(){
+    layersContainer.innerHTML = '';
+    state.layers.forEach(layer=>{
+      const el = document.createElement('img');
+      el.src = layer.src;
+      el.className = 'layer-img';
+      el.dataset.id = layer.id;
+      el.style.left = layer.x+'%';
+      el.style.top = layer.y+'%';
+      el.style.width = layer.scale+'px';
+      el.style.transform = `translate(-50%,-50%) rotate(${layer.rotation}deg)`;
+      el.style.opacity = layer.opacity/100;
+      el.style.zIndex = layer.z;
+      el.style.filter = filterCss(layer.filters);
+      el.style.border = layer.borderW ? `${layer.borderW}px solid #fff` : 'none';
+      el.style.borderRadius = (layer.borderRadius||0)+'%';
+      layersContainer.appendChild(el);
+    });
+  }
+
+  function selectLayer(id){
+    selectedLayerId = id;
+    const layer = state.layers.find(l=>l.id===id);
+    if(!layer){ layerToolbar.classList.remove('open'); return; }
+    layerToolbar.classList.add('open');
+    $('layerScale').value = layer.scale;
+    $('layerRotation').value = layer.rotation;
+    $('layerOpacity').value = layer.opacity;
+    const f = layer.filters;
+    $('lyBrightness').value=f.brightness; $('lyContrast').value=f.contrast; $('lySaturate').value=f.saturate;
+    $('lyHue').value=f.hue; $('lyGray').value=f.gray; $('lySepia').value=f.sepia; $('lyBlur').value=f.blur;
+    $('lyBorder').value=layer.borderW; $('lyRadius').value=layer.borderRadius;
+    $('lyInvert').classList.toggle('on', f.invert>0);
+  }
+
+  let dragInfo = null;
+  layersContainer.addEventListener('pointerdown', e=>{
+    if(!document.body.classList.contains('edit-mode')) return;
+    const el = e.target.closest('.layer-img');
+    if(!el) return;
+    selectLayer(el.dataset.id);
+    dragInfo = {id: el.dataset.id, startX:e.clientX, startY:e.clientY};
+    el.setPointerCapture(e.pointerId);
+  });
+  layersContainer.addEventListener('pointermove', e=>{
+    if(!dragInfo) return;
+    const layer = state.layers.find(l=>l.id===dragInfo.id);
+    if(!layer) return;
+    const dxPct = (e.clientX-dragInfo.startX)/window.innerWidth*100;
+    const dyPct = (e.clientY-dragInfo.startY)/window.innerHeight*100;
+    layer.x = Math.min(100, Math.max(0, layer.x+dxPct));
+    layer.y = Math.min(100, Math.max(0, layer.y+dyPct));
+    dragInfo.startX = e.clientX; dragInfo.startY = e.clientY;
+    renderLayers();
+  });
+  layersContainer.addEventListener('pointerup', ()=>{ if(dragInfo){ dragInfo=null; save(); } });
+
+  editModeBtn.onclick = ()=>{
+    document.body.classList.toggle('edit-mode');
+    editModeBtn.classList.toggle('active');
+    if(!document.body.classList.contains('edit-mode')){ layerToolbar.classList.remove('open'); selectedLayerId=null; }
+  };
+
+  $('addLayerBtn').onclick = ()=> $('layerImageInput').click();
+  $('layerImageInput').onchange = async e=>{
+    const file = e.target.files[0]; if(!file) return;
+    try{
+      const src = await resizeImageFile(file, 900, 0.85);
+      const maxZ = state.layers.reduce((m,l)=>Math.max(m,l.z),0);
+      state.layers.push({id:Date.now().toString(), src, x:50, y:50, scale:220, rotation:0, opacity:100, z:maxZ+1,
+        filters:{brightness:100,contrast:100,saturate:100,hue:0,gray:0,sepia:0,blur:0,invert:0}, borderW:0, borderRadius:0});
+      if(!document.body.classList.contains('edit-mode')) editModeBtn.click();
+      applyState(); save();
+    }catch(err){}
+  };
+
+  ['layerScale','layerRotation','layerOpacity'].forEach(id=>{
+    $(id).oninput = e=>{
+      const layer = state.layers.find(l=>l.id===selectedLayerId);
+      if(!layer) return;
+      const prop = id==='layerScale'?'scale':id==='layerRotation'?'rotation':'opacity';
+      layer[prop] = parseInt(e.target.value,10);
+      renderLayers();
+    };
+    $(id).onchange = ()=> save();
+  });
+  $('layerFront').onclick = ()=>{
+    const layer = state.layers.find(l=>l.id===selectedLayerId);
+    if(!layer) return;
+    const maxZ = state.layers.reduce((m,l)=>Math.max(m,l.z),0);
+    layer.z = maxZ+1; renderLayers(); save();
+  };
+  $('layerDelete').onclick = ()=>{
+    state.layers = state.layers.filter(l=>l.id!==selectedLayerId);
+    selectedLayerId=null; layerToolbar.classList.remove('open');
+    renderLayers(); save();
+  };
+
+  $('layerMoreBtn').onclick = ()=> $('layerExtra').classList.toggle('open');
+
+  const laySliderMap = {
+    lyBrightness:'brightness', lyContrast:'contrast', lySaturate:'saturate',
+    lyHue:'hue', lyGray:'gray', lySepia:'sepia', lyBlur:'blur'
+  };
+  Object.keys(laySliderMap).forEach(id=>{
+    $(id).oninput = e=>{
+      const layer = state.layers.find(l=>l.id===selectedLayerId);
+      if(!layer) return;
+      layer.filters[laySliderMap[id]] = parseInt(e.target.value,10);
+      renderLayers();
+    };
+    $(id).onchange = ()=> save();
+  });
+  $('lyBorder').oninput = e=>{
+    const layer = state.layers.find(l=>l.id===selectedLayerId);
+    if(!layer) return;
+    layer.borderW = parseInt(e.target.value,10);
+    renderLayers();
+  };
+  $('lyBorder').onchange = ()=> save();
+  $('lyRadius').oninput = e=>{
+    const layer = state.layers.find(l=>l.id===selectedLayerId);
+    if(!layer) return;
+    layer.borderRadius = parseInt(e.target.value,10);
+    renderLayers();
+  };
+  $('lyRadius').onchange = ()=> save();
+  $('lyInvert').onclick = ()=>{
+    const layer = state.layers.find(l=>l.id===selectedLayerId);
+    if(!layer) return;
+    layer.filters.invert = layer.filters.invert>0?0:100;
+    $('lyInvert').classList.toggle('on', layer.filters.invert>0);
+    renderLayers(); save();
+  };
 })();
 </script>
 </body>
