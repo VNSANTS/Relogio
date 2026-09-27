@@ -333,7 +333,7 @@ body.has-bg-image{ background-size:cover; background-position:center; background
   <div class="top-icons">
     <button id="alarmIconBtn" title="Despertador" style="display:none;">⏰</button>
     <button id="gearBtn" title="Personalizar" style="display:none;">⚙</button>
-    <button id="fsBtn" title="Tela cheia (F)">⛶</button>
+    <button id="fsBtn" title="Tela cheia (F)" aria-label="Alternar tela cheia">⛶</button>
   </div>
 </header>
 
@@ -421,11 +421,13 @@ body.has-bg-image{ background-size:cover; background-position:center; background
         </div>
       </div>
       <audio id="audioPlayer"></audio>
-      <div style="display:flex; gap:8px; margin-top:10px;">
-        <button class="dc-btn" id="musicChoose">Escolher</button>
-        <button class="dc-btn" id="musicPrev">⏮</button>
-        <button class="dc-btn" id="musicPlay">▶</button>
-        <button class="dc-btn" id="musicNext">⏭</button>
+      <input type="range" id="musicSeek" min="0" max="100" value="0" step="0.1" style="width:100%;margin-top:10px;accent-color:var(--accent);" aria-label="Progresso da música">
+      <div style="display:flex;justify-content:space-between;"><span class="dc-sub" id="musicCurrentTime">0:00</span><span class="dc-sub" id="musicDuration">0:00</span></div>
+      <div style="display:flex; gap:8px; margin-top:6px;">
+        <button class="dc-btn" id="musicChoose" aria-label="Escolher músicas">Escolher</button>
+        <button class="dc-btn" id="musicPrev" aria-label="Música anterior">⏮</button>
+        <button class="dc-btn" id="musicPlay" aria-label="Tocar ou pausar">▶</button>
+        <button class="dc-btn" id="musicNext" aria-label="Próxima música">⏭</button>
       </div>
     </div>
   </div>
@@ -706,6 +708,7 @@ body.has-bg-image{ background-size:cover; background-position:center; background
 (function(){
   const $ = id => document.getElementById(id);
   const timeEl = $('time'), dateEl = $('date');
+  const layersContainer = $('layersContainer');
   const panel = $('panel'), overlay = $('overlay');
   const gearBtn = $('gearBtn'), closePanel = $('closePanel'), fsBtn = $('fsBtn');
   const clockWrap = $('clockWrap');
@@ -1210,6 +1213,9 @@ body.has-bg-image{ background-size:cover; background-position:center; background
     audioPlayer.src = URL.createObjectURL(file);
     $('musicTitle').textContent = file.name.replace(/\.[^/.]+$/, '');
     $('musicCount').textContent = musicFiles.length>1 ? `Faixa ${musicIndex+1} de ${musicFiles.length}` : '';
+    $('musicSeek').value = 0;
+    $('musicCurrentTime').textContent = '0:00';
+    $('musicDuration').textContent = '0:00';
     audioPlayer.play();
     $('musicPlay').textContent = '⏸';
     $('musicCover').style.animation = 'spin 3s linear infinite';
@@ -1228,6 +1234,26 @@ body.has-bg-image{ background-size:cover; background-position:center; background
     musicIndex = (musicIndex-1+musicFiles.length)%musicFiles.length; loadMusic();
   };
   audioPlayer.addEventListener('ended', ()=>{ if(musicFiles.length>1) $('musicNext').onclick(); else { $('musicPlay').textContent='▶'; $('musicCover').style.animation='none'; } });
+
+  function fmtTime(sec){
+    if(!isFinite(sec)) return '0:00';
+    const m = Math.floor(sec/60), s = Math.floor(sec%60);
+    return m+':'+String(s).padStart(2,'0');
+  }
+  let seekDragging = false;
+  audioPlayer.addEventListener('timeupdate', ()=>{
+    if(seekDragging) return;
+    $('musicCurrentTime').textContent = fmtTime(audioPlayer.currentTime);
+    if(audioPlayer.duration) $('musicSeek').value = (audioPlayer.currentTime/audioPlayer.duration)*100;
+  });
+  audioPlayer.addEventListener('loadedmetadata', ()=>{
+    $('musicDuration').textContent = fmtTime(audioPlayer.duration);
+  });
+  $('musicSeek').addEventListener('input', ()=>{ seekDragging = true; });
+  $('musicSeek').addEventListener('change', e=>{
+    if(audioPlayer.duration) audioPlayer.currentTime = (e.target.value/100)*audioPlayer.duration;
+    seekDragging = false;
+  });
 
   // extend the main tick loop
   setInterval(()=>{ updateExtraClocks(); updateAnalog(); updateWallpaper(); }, 1000);
@@ -1541,7 +1567,6 @@ body.has-bg-image{ background-size:cover; background-position:center; background
   });
 
   // ---------- Imagens soltas (camadas arrastáveis) ----------
-  const layersContainer = $('layersContainer');
   const editModeBtn = $('editModeBtn');
   const layerToolbar = $('layerToolbar');
   let selectedLayerId = null;
