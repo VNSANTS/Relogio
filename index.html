@@ -7,7 +7,7 @@
 <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIlJlbFx1MDBmM2dpbyIsICJzaG9ydF9uYW1lIjogIlJlbFx1MDBmM2dpbyIsICJzdGFydF91cmwiOiAiLiIsICJzY29wZSI6ICIuIiwgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwYTBhMGEiLCAidGhlbWVfY29sb3IiOiAiIzBhMGEwYSIsICJpY29ucyI6IFt7InNyYyI6ICJpY29uLTE5Mi5wbmciLCAic2l6ZXMiOiAiMTkyeDE5MiIsICJ0eXBlIjogImltYWdlL3BuZyIsICJwdXJwb3NlIjogImFueSJ9LCB7InNyYyI6ICJpY29uLTUxMi5wbmciLCAic2l6ZXMiOiAiNTEyeDUxMiIsICJ0eXBlIjogImltYWdlL3BuZyIsICJwdXJwb3NlIjogImFueSJ9LCB7InNyYyI6ICJpY29uLTUxMi5wbmciLCAic2l6ZXMiOiAiNTEyeDUxMiIsICJ0eXBlIjogImltYWdlL3BuZyIsICJwdXJwb3NlIjogIm1hc2thYmxlIn1dfQ==">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
 
@@ -106,19 +106,30 @@
       <div style="display:flex; gap:10px; align-items:center;">
         <div id="musicCover">🎵</div>
         <div style="flex:1; min-width:0;">
-          <div class="dc-sub" id="musicTitle" style="opacity:0.9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Nenhuma música</div>
+          <div class="dc-sub" id="musicTitle" style="opacity:0.9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Nenhuma música — abra Arquivos</div>
           <div class="dc-sub" id="musicCount"></div>
         </div>
       </div>
       <audio id="audioPlayer"></audio>
       <input type="range" id="musicSeek" min="0" max="100" value="0" step="0.1" style="width:100%;margin-top:10px;accent-color:var(--accent);" aria-label="Progresso da música">
       <div style="display:flex;justify-content:space-between;"><span class="dc-sub" id="musicCurrentTime">0:00</span><span class="dc-sub" id="musicDuration">0:00</span></div>
-      <div style="display:flex; gap:8px; margin-top:6px;">
-        <button class="dc-btn" id="musicChoose" aria-label="Escolher músicas">Escolher</button>
-        <button class="dc-btn" id="musicPrev" aria-label="Música anterior">⏮</button>
-        <button class="dc-btn" id="musicPlay" aria-label="Tocar ou pausar">▶</button>
-        <button class="dc-btn" id="musicNext" aria-label="Próxima música">⏭</button>
+      <div class="music-controls-row">
+        <button class="dc-btn" id="musicShuffle" aria-label="Aleatório" title="Aleatório">🔀</button>
+        <button class="dc-btn" id="musicPrev" aria-label="Música anterior" title="Anterior">⏮</button>
+        <button class="dc-btn" id="musicBack" aria-label="Voltar 10 segundos" title="-10s">10↺</button>
+        <button class="dc-btn play" id="musicPlay" aria-label="Tocar ou pausar" title="Tocar/Pausar">▶</button>
+        <button class="dc-btn" id="musicFwd" aria-label="Avançar 10 segundos" title="+10s">10↻</button>
+        <button class="dc-btn" id="musicNext" aria-label="Próxima música" title="Próxima">⏭</button>
+        <button class="dc-btn" id="musicRepeat" aria-label="Repetição" title="Repetição">🔁</button>
       </div>
+      <div class="music-controls-row" style="margin-top:8px;">
+        <button class="dc-btn" id="musicMute" aria-label="Mudo" title="Mudo/Desmudo">🔊</button>
+        <input type="range" id="cardVolume" min="0" max="100" value="35" style="flex:1;accent-color:var(--accent);" aria-label="Volume">
+        <span class="dc-sub" id="cardVolumeVal">100%</span>
+        <button class="dc-btn" id="musicOpenFiles" aria-label="Abrir biblioteca de músicas" title="Abrir Arquivos">📁</button>
+        <button class="dc-btn" id="musicOpenEq" aria-label="Abrir equalizador" title="Equalizador">🎚️</button>
+      </div>
+      <div class="dc-sub" id="musicModes" style="margin-top:6px;"></div>
     </div>
   </div>
 </div>
@@ -160,6 +171,8 @@
     <button class="tool-tab active" data-tab="alarm">Despertador</button>
     <button class="tool-tab" data-tab="timer">Timer</button>
     <button class="tool-tab" data-tab="stopwatch">Cronômetro</button>
+    <button class="tool-tab" data-tab="files">Arquivos</button>
+    <button class="tool-tab" data-tab="eq">Equalizador</button>
   </div>
   <div id="paneAlarm" class="tool-pane">
     <input type="time" id="alarmTime">
@@ -176,6 +189,103 @@
     <div class="tool-big-display" id="swDisplay">00:00.0</div>
     <button id="swStart">Iniciar</button>
     <button id="swReset">Zerar</button>
+  </div>
+  <div id="paneFiles" class="tool-pane" style="display:none">
+    <div class="files-title">🎵 Biblioteca de músicas</div>
+
+    <div class="pf-player">
+      <div style="display:flex; gap:10px; align-items:center;">
+        <div id="pfMusicCover" class="pf-cover">🎵</div>
+        <div style="flex:1; min-width:0;">
+          <div class="dc-sub pf-title" id="pfMusicTitle">Nenhuma música — escolha abaixo</div>
+          <div class="dc-sub" id="pfMusicCount"></div>
+        </div>
+      </div>
+      <input type="range" id="pfMusicSeek" min="0" max="100" value="0" step="0.1" style="width:100%;margin-top:10px;accent-color:var(--accent);" aria-label="Progresso da música">
+      <div style="display:flex;justify-content:space-between;"><span class="dc-sub" id="pfMusicCurrentTime">0:00</span><span class="dc-sub" id="pfMusicDuration">0:00</span></div>
+      <div class="music-controls-row">
+        <button class="dc-btn" id="pfMusicShuffle" aria-label="Aleatório" title="Aleatório">🔀</button>
+        <button class="dc-btn" id="pfMusicPrev" aria-label="Música anterior" title="Anterior">⏮</button>
+        <button class="dc-btn" id="pfMusicBack" aria-label="Voltar 10 segundos" title="-10s">10↺</button>
+        <button class="dc-btn play" id="pfMusicPlay" aria-label="Tocar ou pausar" title="Tocar/Pausar">▶</button>
+        <button class="dc-btn" id="pfMusicFwd" aria-label="Avançar 10 segundos" title="+10s">10↻</button>
+        <button class="dc-btn" id="pfMusicNext" aria-label="Próxima música" title="Próxima">⏭</button>
+        <button class="dc-btn" id="pfMusicRepeat" aria-label="Repetição" title="Repetição">🔁</button>
+      </div>
+      <div class="music-controls-row" style="margin-top:8px;">
+        <button class="dc-btn" id="pfMusicMute" aria-label="Mudo" title="Mudo/Desmudo">🔊</button>
+        <input type="range" id="pfVolume" min="0" max="100" value="35" style="flex:1;accent-color:var(--accent);" aria-label="Volume">
+        <span class="dc-sub" id="pfVolumeVal">100%</span>
+        <button class="dc-btn" id="pfOpenEq" aria-label="Abrir equalizador" title="Equalizador">🎚️</button>
+      </div>
+      <div class="dc-sub" id="pfMusicModes" style="margin-top:6px;"></div>
+    </div>
+
+    <input type="file" id="musicFolderInput" webkitdirectory multiple style="display:none;">
+    <div class="files-actions">
+      <button id="musicPickFolder">📂 Escolher pasta</button>
+      <button id="musicChoose">🎵 Escolher arquivos</button>
+    </div>
+    <div id="musicListInfo" class="dc-sub"></div>
+    <input type="text" id="musicSearch" placeholder="Buscar na lista..." class="files-search">
+    <div id="musicList"></div>
+  </div>
+  <div id="paneEq" class="tool-pane" style="display:none">
+    <div class="files-title">🎚️ Equalizador</div>
+
+    <div class="knob-row">
+      <div class="knob" id="knobVolume"></div>
+      <div class="knob" id="knobBass"></div>
+      <div class="knob" id="knobVirt"></div>
+    </div>
+    <div class="meter-row">
+      <div class="meter" id="meterL"></div>
+      <div class="meter" id="meterR"></div>
+    </div>
+    <div id="volWarn" class="eq-warn"></div>
+
+    <div class="eq-band-row">
+      <div class="eq-band"><input type="range" id="eqBand0" min="-12" max="12" step="1" value="0" orient="vertical"><span id="eqDb0">+0dB</span><label id="eqHz0"></label></div>
+      <div class="eq-band"><input type="range" id="eqBand1" min="-12" max="12" step="1" value="0" orient="vertical"><span id="eqDb1">+0dB</span><label id="eqHz1"></label></div>
+      <div class="eq-band"><input type="range" id="eqBand2" min="-12" max="12" step="1" value="0" orient="vertical"><span id="eqDb2">+0dB</span><label id="eqHz2"></label></div>
+      <div class="eq-band"><input type="range" id="eqBand3" min="-12" max="12" step="1" value="0" orient="vertical"><span id="eqDb3">+0dB</span><label id="eqHz3"></label></div>
+      <div class="eq-band"><input type="range" id="eqBand4" min="-12" max="12" step="1" value="0" orient="vertical"><span id="eqDb4">+0dB</span><label id="eqHz4"></label></div>
+    </div>
+
+    <label class="eq-label">Predefinição</label>
+    <select id="eqPreset"></select>
+
+    <div class="eq-row-2">
+      <div>
+        <label class="eq-label">Velocidade</label>
+        <select id="eqSpeed"></select>
+      </div>
+      <div>
+        <label class="eq-label">Timer de sono</label>
+        <select id="eqSleep">
+          <option value="0">Desligado</option>
+          <option value="10">10 min</option>
+          <option value="20">20 min</option>
+          <option value="30">30 min</option>
+          <option value="45">45 min</option>
+          <option value="60">60 min</option>
+          <option value="end">Fim da música atual</option>
+        </select>
+      </div>
+    </div>
+    <div id="sleepStatus" class="dc-sub"></div>
+
+    <button id="eqLimiter" class="eq-toggle-btn">Limitador: desligado</button>
+
+    <label class="eq-label">Repetir trecho (A–B)</label>
+    <div class="ab-row">
+      <button id="abSetA">Marcar A</button>
+      <button id="abSetB">Marcar B</button>
+      <button id="abClear">Limpar</button>
+    </div>
+    <div id="abStatus" class="dc-sub"></div>
+
+    <button id="eqReset" class="eq-reset-btn">Restaurar padrões</button>
   </div>
 </div>
 
@@ -402,6 +512,7 @@
   </div>
 </div>
 
-<script src="app.js"></script>
+<script src="app.js?v=3"></script>
+<script src="music.js?v=3"></script>
 </body>
 </html>

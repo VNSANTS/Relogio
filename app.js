@@ -489,65 +489,6 @@
     return 'Nublado';
   }
 
-  // ---------- Player de música (arquivos locais do seu celular/PC) ----------
-  const audioPlayer = $('audioPlayer');
-  let musicFiles = [], musicIndex = 0;
-  $('musicChoose').onclick = ()=> $('musicFileInput').click();
-  $('musicFileInput').onchange = e=>{
-    musicFiles = Array.from(e.target.files);
-    if(musicFiles.length){
-      musicIndex = 0;
-      loadMusic();
-    }
-  };
-  function loadMusic(){
-    const file = musicFiles[musicIndex];
-    if(!file) return;
-    audioPlayer.src = URL.createObjectURL(file);
-    $('musicTitle').textContent = file.name.replace(/\.[^/.]+$/, '');
-    $('musicCount').textContent = musicFiles.length>1 ? `Faixa ${musicIndex+1} de ${musicFiles.length}` : '';
-    $('musicSeek').value = 0;
-    $('musicCurrentTime').textContent = '0:00';
-    $('musicDuration').textContent = '0:00';
-    audioPlayer.play();
-    $('musicPlay').textContent = '⏸';
-    $('musicCover').style.animation = 'spin 3s linear infinite';
-  }
-  $('musicPlay').onclick = ()=>{
-    if(!audioPlayer.src) return;
-    if(audioPlayer.paused){ audioPlayer.play(); $('musicPlay').textContent='⏸'; $('musicCover').style.animation='spin 3s linear infinite'; }
-    else { audioPlayer.pause(); $('musicPlay').textContent='▶'; $('musicCover').style.animation='none'; }
-  };
-  $('musicNext').onclick = ()=>{
-    if(!musicFiles.length) return;
-    musicIndex = (musicIndex+1)%musicFiles.length; loadMusic();
-  };
-  $('musicPrev').onclick = ()=>{
-    if(!musicFiles.length) return;
-    musicIndex = (musicIndex-1+musicFiles.length)%musicFiles.length; loadMusic();
-  };
-  audioPlayer.addEventListener('ended', ()=>{ if(musicFiles.length>1) $('musicNext').onclick(); else { $('musicPlay').textContent='▶'; $('musicCover').style.animation='none'; } });
-
-  function fmtTime(sec){
-    if(!isFinite(sec)) return '0:00';
-    const m = Math.floor(sec/60), s = Math.floor(sec%60);
-    return m+':'+String(s).padStart(2,'0');
-  }
-  let seekDragging = false;
-  audioPlayer.addEventListener('timeupdate', ()=>{
-    if(seekDragging) return;
-    $('musicCurrentTime').textContent = fmtTime(audioPlayer.currentTime);
-    if(audioPlayer.duration) $('musicSeek').value = (audioPlayer.currentTime/audioPlayer.duration)*100;
-  });
-  audioPlayer.addEventListener('loadedmetadata', ()=>{
-    $('musicDuration').textContent = fmtTime(audioPlayer.duration);
-  });
-  $('musicSeek').addEventListener('input', ()=>{ seekDragging = true; });
-  $('musicSeek').addEventListener('change', e=>{
-    if(audioPlayer.duration) audioPlayer.currentTime = (e.target.value/100)*audioPlayer.duration;
-    seekDragging = false;
-  });
-
   // extend the main tick loop
   setInterval(()=>{ updateExtraClocks(); updateAnalog(); updateWallpaper(); }, 1000);
   updateExtraClocks(); updateAnalog(); updateWallpaper();
@@ -556,6 +497,8 @@
   const toolWidget = $('toolWidget');
   function openTool(tab){
     toolWidget.classList.add('open');
+    clockWrap.style.display = 'none';
+    document.querySelectorAll('.nav-item').forEach(b=> b.classList.toggle('active', b.dataset.view===tab));
     document.querySelectorAll('.tool-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
     document.querySelectorAll('.tool-pane').forEach(p=>p.style.display='none');
     $('pane'+tab.charAt(0).toUpperCase()+tab.slice(1)).style.display='block';
@@ -565,19 +508,12 @@
   $('openStopwatch').onclick = ()=>openTool('stopwatch');
 
   function showView(view){
+    if(view==='settings'){ openPanel(); return; }
     document.querySelectorAll('.nav-item').forEach(b=> b.classList.toggle('active', b.dataset.view===view));
     if(view==='clock'){
       toolWidget.classList.remove('open');
       clockWrap.style.display='';
-    } else if(view==='settings' || view==='files'){
-      openPanel();
-      document.querySelector('.nav-item[data-view="clock"]').classList.add('active');
-      if(view==='files'){
-        const backupGroup = $('exportBtn').closest('.group');
-        if(backupGroup) backupGroup.scrollIntoView({behavior:'smooth', block:'center'});
-      }
     } else {
-      clockWrap.style.display='none';
       openTool(view);
     }
   }
@@ -585,6 +521,9 @@
     btn.onclick = ()=> showView(btn.dataset.view);
   });
   $('alarmIconBtn').onclick = ()=> showView('alarm');
+  $('musicOpenFiles').onclick = ()=> showView('files');
+  $('musicOpenEq').onclick = ()=> showView('eq');
+  $('pfOpenEq').onclick = ()=> showView('eq');
   $('toolClose').onclick = ()=> showView('clock');
   document.querySelectorAll('.tool-tab').forEach(b=> b.onclick = ()=>openTool(b.dataset.tab));
 

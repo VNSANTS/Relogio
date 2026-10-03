@@ -18,6 +18,8 @@
   html,body{
     height:100%;
     margin:0;
+    overflow-x:hidden;
+    max-width:100vw;
     padding-top:env(safe-area-inset-top,0px);
     padding-bottom:env(safe-area-inset-bottom,0px);
   }
@@ -67,7 +69,7 @@
   .nav-item.active{ opacity:1; color:var(--accent); }
   .nav-icon{ font-size:18px; }
   #time{
-    font-size:calc(min(20vw,18vh) * var(--clock-scale, 1));
+    font-size:calc(min(9vw,8.5vh) * var(--clock-scale, 1));
     font-weight:700;
     letter-spacing:2px;
     line-height:1;
@@ -119,14 +121,16 @@
     display:flex; justify-content:space-between; padding:16px; gap:16px;
     pointer-events:none; z-index:2; overflow:hidden;
   }
-  #dashLeft, #dashRight{ display:flex; flex-direction:column; gap:10px; width:clamp(150px, 22vw, 220px); overflow-y:auto; pointer-events:auto; }
+  #dashLeft, #dashRight{ display:flex; flex-direction:column; gap:10px; width:clamp(190px, 27vw, 300px); min-width:0; overflow-y:auto; overflow-x:hidden; pointer-events:auto; }
   #dashLeft{ align-items:flex-start; } #dashRight{ align-items:flex-end; margin-left:auto; }
   .dash-card{
     background:linear-gradient(160deg, rgba(30,34,44,0.72), rgba(20,23,30,0.6));
     border:1px solid rgba(255,255,255,0.08);
     border-radius:16px;
-    padding:clamp(8px,1.5vw,14px); width:100%; font-family:'Segoe UI', system-ui, sans-serif;
+    padding:clamp(8px,1.5vw,14px); width:100%; box-sizing:border-box;
+    font-family:'Segoe UI', system-ui, sans-serif;
     box-shadow:0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+    overflow:hidden;
   }
   .dc-title{ font-size:clamp(10px,1.1vw,12px); opacity:0.6; margin-bottom:6px; color:var(--panel-fg); }
   .dc-big{ font-size:clamp(16px,2.4vw,26px); font-weight:700; color:var(--panel-fg); }
@@ -253,7 +257,7 @@
     position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
     background:var(--panel-bg); color:var(--panel-fg);
     border:1px solid var(--panel-border); border-radius:20px;
-    padding:28px; width:300px; max-width:88vw; z-index:40;
+    padding:28px; width:340px; max-width:88vw; z-index:40;
     font-family:'Segoe UI', system-ui, sans-serif;
     display:none; backdrop-filter:blur(10px);
   }
@@ -309,3 +313,98 @@ body.has-bg-image{ background-size:cover; background-position:center; background
   .lt-extra{ display:none; width:100%; flex-wrap:wrap; gap:10px; justify-content:center; border-top:1px solid var(--panel-border); margin-top:8px; padding-top:8px; }
   .lt-extra.open{ display:flex; }
   #backupBtns button{ flex:1; padding:9px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.08); color:var(--panel-fg); cursor:pointer; font-size:13px; }
+
+  /* Biblioteca de músicas (aba Arquivos) */
+  .files-title{ font-size:15px; font-weight:700; margin-bottom:12px; }
+  .pf-player{
+    background:rgba(255,255,255,0.04); border:1px solid var(--panel-border);
+    border-radius:14px; padding:12px; margin-bottom:16px;
+  }
+  .pf-cover{
+    width:42px; height:42px; border-radius:10px; flex-shrink:0;
+    background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 40%, #1a1a2e));
+    background-size:cover; background-position:center;
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+    box-shadow:0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
+  }
+  .pf-title{ opacity:0.9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #pfVolumeVal{ font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .files-actions{ display:flex; gap:8px; margin-bottom:10px; }
+  .files-actions button{ flex:1; }
+  #musicList{ max-height:min(220px, 32vh); overflow-y:auto; margin-top:8px; }
+  .music-row{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; font-size:12px; cursor:pointer; }
+  .music-row:hover{ background:rgba(255,255,255,0.06); }
+  .music-row.current{ background:color-mix(in srgb, var(--accent) 22%, transparent); color:var(--accent); }
+  .music-row span{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .music-row button{ background:none; border:none; color:inherit; opacity:.5; cursor:pointer; margin:0; padding:2px 4px; }
+
+  /* Controles do card de música na tela inicial */
+  .music-controls-row{ display:flex; align-items:center; gap:3px; margin-top:8px; flex-wrap:wrap; }
+  .music-controls-row .dc-btn{ flex:1 1 auto; min-width:0; padding:7px 2px; font-size:12px; }
+  .music-controls-row .dc-btn.play{ background:var(--accent); color:#0a0a0a; font-size:14px; }
+  .music-controls-row .dc-btn.on{ background:var(--accent); color:#0a0a0a; }
+  #cardVolume{ min-width:0; }
+  #musicCover{
+    background-size:cover; background-position:center;
+  }
+
+  /* Widget de ferramentas mais largo quando o equalizador está aberto */
+  #toolWidget.wide{ width:380px; }
+
+  /* Aba Arquivos: busca */
+  .files-search{
+    width:100%; margin:8px 0; padding:8px 10px; border-radius:8px;
+    border:1px solid var(--panel-border); background:rgba(255,255,255,0.06);
+    color:var(--panel-fg); font-size:13px;
+  }
+
+  /* Botões redondos (volume / grave / virtualizador) */
+  .knob-row{ display:flex; justify-content:space-around; margin:4px 0 8px; }
+  .knob{ width:88px; height:88px; cursor:pointer; touch-action:none; outline:none; }
+  .knob svg{ width:100%; height:100%; overflow:visible; }
+  .knob:focus-visible circle.knob-track{ stroke:var(--accent); }
+  .knob-track{ stroke:rgba(255,255,255,0.12); }
+  .knob-prog{ stroke:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 70%, transparent)); }
+  .knob-dot{ fill:var(--accent); }
+  .knob-val{ font-size:15px; font-weight:700; fill:var(--panel-fg); font-family:'Segoe UI', system-ui, sans-serif; }
+  .knob-cap{ font-size:9px; letter-spacing:.5px; fill:var(--panel-fg); opacity:.55; font-family:'Segoe UI', system-ui, sans-serif; text-transform:uppercase; }
+
+  #cardVolumeVal{ font-variant-numeric:tabular-nums; }
+  #cardVolumeVal.hot{ color:#ff6b6b; font-weight:700; }
+  .eq-warn{ font-size:11px; color:#ff6b6b; opacity:.9; min-height:14px; margin-bottom:6px; text-align:center; }
+
+  /* Medidores de volume (VU meter) */
+  .meter-row{ display:flex; gap:4px; height:14px; margin:6px 0 4px; }
+  .meter{ flex:1; display:flex; gap:2px; }
+  .meter i{ flex:1; border-radius:2px; background:rgba(255,255,255,0.08); font-style:normal; }
+  .meter i.on{ background:var(--accent); }
+  .meter i.on.hot{ background:#ff6b6b; }
+
+  /* Equalizador de 5 bandas */
+  .eq-band-row{ display:flex; justify-content:space-around; align-items:flex-end; height:130px; margin:10px 0; }
+  .eq-band{ display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; gap:4px; }
+  .eq-band input[type=range][orient=vertical]{
+    writing-mode:vertical-lr; direction:rtl; width:6px; height:90px;
+    accent-color:var(--accent); cursor:pointer;
+  }
+  .eq-band span{ font-size:10px; opacity:.6; }
+  .eq-band label{ font-size:10px; opacity:.5; }
+
+  .eq-label{ display:block; font-size:11px; opacity:.6; margin:10px 0 4px; text-transform:uppercase; letter-spacing:.5px; }
+  #eqPreset, #eqSpeed, #eqSleep{
+    width:100%; padding:8px; border-radius:8px; border:1px solid var(--panel-border);
+    background:rgba(255,255,255,0.06); color:var(--panel-fg); font-size:13px;
+  }
+  .eq-row-2{ display:flex; gap:10px; }
+  .eq-row-2 > div{ flex:1; }
+
+  .eq-toggle-btn, .eq-reset-btn{
+    width:100%; margin-top:10px; padding:9px; border-radius:8px;
+    border:1px solid var(--panel-border); background:rgba(255,255,255,0.08);
+    color:var(--panel-fg); cursor:pointer; font-size:13px;
+  }
+  .eq-toggle-btn.on{ background:var(--accent); color:#0a0a0a; border-color:transparent; }
+  .eq-reset-btn{ opacity:.75; }
+
+  .ab-row{ display:flex; gap:6px; }
+  .ab-row button{ flex:1; padding:8px; border-radius:8px; border:1px solid var(--panel-border); background:rgba(255,255,255,0.08); color:var(--panel-fg); cursor:pointer; font-size:12px; }

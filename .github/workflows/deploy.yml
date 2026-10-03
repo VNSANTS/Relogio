@@ -23,6 +23,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Versiona CSS/JS pelo commit (evita cache misturado)
+        run: |
+          V="${GITHUB_SHA::7}"
+          sed -i "s/styles\.css?v=[^\"]*/styles.css?v=$V/; s/app\.js?v=[^\"]*/app.js?v=$V/; s/music\.js?v=[^\"]*/music.js?v=$V/" index.html
+          grep -n "?v=" index.html
       - name: Configura o Pages
         uses: actions/configure-pages@v5
       - name: Envia o site inteiro como artefato
